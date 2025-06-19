@@ -87,12 +87,15 @@ function App() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-[410px] mx-auto flex-1 w-full lg:max-w-none lg:mx-0">
-        <div className="flex items-center justify-between mt-[40px] mb-[9px] pl-3 lg:hidden">
+      <div className="max-w-[392px] mx-auto">
+
+
+      <div className=" flex-1 w-full lg:max-w-none lg:mx-0">
+        <div className="flex items-center justify-between mt-[40px] mb-[9px] lg:hidden">
           <img src={headImage} alt="" />
           <img src={dehaze} alt="" className="w-[24px] h-[24px]" />
         </div>
-        <div className="right-side flex flex-col gap-6 p-4 items-start lg:flex-row lg:flex-wrap lg:gap-[12px] lg:px-[32px] lg:py-[110px]">
+        <div className="right-side flex flex-col gap-6  items-start lg:flex-row lg:flex-wrap lg:gap-[12px] lg:px-[32px] lg:py-[110px]">
           {/* Plant Sections */}
           {[1, 2, 3].map((_, index) => (
             <div
@@ -253,6 +256,9 @@ function App() {
           ))}
         </div>
       </div>
+
+      </div>
+
     </div>
   );
 }
