@@ -87,7 +87,7 @@ function App() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-[392px] mx-auto lg:max-w-none lg:mx-0">
+      <div className="max-w-[392px] mx-auto mb-[110px] lg:max-w-none lg:mx-0">
 
 
       <div className=" flex-1 w-full ">
