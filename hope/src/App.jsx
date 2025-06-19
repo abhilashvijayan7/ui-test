@@ -6,7 +6,7 @@ import deployed from "./images/deployed_code_account.png";
 import headset from "./images/headset_mic.png";
 import passkey from "./images/passkey.png";
 import logout from "./images/logout.png";
-import icon from "./images/icon.png";
+import icon from "./images/Icon.png";
 import headImage from "./images/image 3 (1).png";
 import dehaze from "./images/dehaze.png";
 
