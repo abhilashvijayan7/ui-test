@@ -87,8 +87,8 @@ function App() {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-[398px] mx-auto flex-1 w-full lg:max-w-none lg:mx-0">
-        <div className="flex items-center justify-between mt-[40px] mb-[9px] pl-6 lg:hidden">
+      <div className="max-w-[410px] mx-auto flex-1 w-full lg:max-w-none lg:mx-0">
+        <div className="flex items-center justify-between mt-[40px] mb-[9px] pl-3 lg:hidden">
           <img src={headImage} alt="" />
           <img src={dehaze} alt="" className="w-[24px] h-[24px]" />
         </div>
