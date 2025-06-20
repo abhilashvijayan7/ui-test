@@ -166,11 +166,11 @@ function App() {
                   </div>
 
                   <div className="flex justify-between">
-                    <div className="flex items-center justify-between border border-[#DADADA] rounded-md p-3 font-[700] text-[#4E4D4D] ">
+                    <div className="flex items-center justify-between border border-[#DADADA] rounded-md px-2 py-1.5 font-[700] text-[#4E4D4D] ">
                       <p className="text-[18px] mr-2">Motor 2</p>
                       <p className="text-[16px] text-[#66BB6A]">STAND BY</p>
                     </div>
-                    <div className="flex items-center justify-between border border-[#DADADA] rounded-md p-3 font-[700] text-[#4E4D4D]">
+                    <div className="flex items-center justify-between border border-[#DADADA] rounded-md px-2 py-1.5 font-[700] text-[#4E4D4D]">
                       <p className="text-[18px] mr-2">Motor 3</p>
                       <p className="text-[16px] text-[#EF5350]">OFF</p>
                     </div>
