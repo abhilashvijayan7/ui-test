@@ -104,7 +104,7 @@ function App() {
                   <p className="text-[#4E4D4D] text-[19px] font-[700]">
                     Government Medical College Thrissur Medical College Thrissur 
                   </p>
-                  <button className="flex bg-[#66BB6A] items-center py-[10px] px-[18px]  rounded-[6px] gap-[10px] justify-center text-[16px] text-[#FFFFFF]">
+                  <button className="flex bg-[#66BB6A] items-center py-[10px] px-[18px] ml-[10px]  rounded-[6px] gap-[10px] justify-center text-[16px] text-[#FFFFFF]">
                     <img src={icon} alt="" className="w-[20px] h-[20px]" />
                     START
                   </button>
@@ -168,7 +168,7 @@ function App() {
                   <div className="flex justify-between">
                     <div className="flex items-center justify-between border border-[#DADADA] rounded-md p-3 font-[700] text-[#4E4D4D] ">
                       <p className="text-[18px] mr-2">Motor 2</p>
-                      <p className="text-[16px] text-[#37b655]">STAND BY</p>
+                      <p className="text-[16px] text-[#66BB6A]">STAND BY</p>
                     </div>
                     <div className="flex items-center justify-between border border-[#DADADA] rounded-md p-3 font-[700] text-[#4E4D4D]">
                       <p className="text-[18px] mr-2">Motor 3</p>
