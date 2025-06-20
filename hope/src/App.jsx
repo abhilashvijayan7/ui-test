@@ -182,7 +182,7 @@ function App() {
                     Sensors & Actuators
                   </p>
                   <div className="mt-[6px] text-[#6B6B6B] text-[14px] font-[400]">
-                    <div className="flex border-b border-b-[#DADADA] pb-[6px]">
+                    <div className="flex border-b border-b-[#DADADA] pb-[6px] gap-15">
                       <div className="w-[33%]">
                         <p className="">
                           Water Inflow
@@ -209,7 +209,7 @@ function App() {
                       </div>
                     </div>
 
-                    <div className="flex border-b border-b-[#DADADA] py-[6px] ">
+                    <div className="flex border-b border-b-[#DADADA] py-[6px] gap-15">
                       <div className="w-[33%]">
                         <p className="">Actuator 4</p>
                         <p className="text-[16px] font-[700] text-[#EF5350]">
@@ -230,7 +230,7 @@ function App() {
                       </div>
                     </div>
 
-                    <div className="flex border-b border-b-[#DADADA] py-[6px] ">
+                    <div className="flex border-b border-b-[#DADADA] py-[6px] gap-15 ">
                       <div className="w-[33%]">
                         <p className="">
                           Vacuum Switch
@@ -255,7 +255,7 @@ function App() {
                       </div>
                     </div>
 
-                    <div className="flex border-b border-b-[#DADADA] py-[6px] ">
+                    <div className="flex border-b border-b-[#DADADA] py-[6px] gap-15">
                       <div className="w-[33%]">
                         <p className="">
                           Res.cl (farthest)
