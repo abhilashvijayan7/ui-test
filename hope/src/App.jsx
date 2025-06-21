@@ -98,7 +98,7 @@ function App() {
             {[1, 2, 3, 4, 5, 6].map((_, index) => (
               <div
                 key={index}
-                className="w-[370px] px-[10px] py-[13px] border border-[#DADADA] rounded-[12px] bg-[#FFFFFF] lg:w-[417px]"
+                className="w-[380px] px-[10px] py-[13px] border border-[#DADADA] rounded-[12px] bg-[#FFFFFF] lg:w-[417px]"
               >
                 <div className="flex justify-between mb-[20px] items-center">
                   <p className="text-[#4E4D4D] text-[19px] font-[700]">
