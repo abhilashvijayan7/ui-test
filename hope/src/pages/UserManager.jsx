@@ -16,8 +16,22 @@ import location_on from "../images/location_on.png";
 import encrypted from "../images/encrypted.png";
 import AddUserModal from "../components/AddUserModal";
 
+import UploadComponent from '../components/UploadComponent';
+
+
 function UserManager() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState("add"); // Track modal mode: "add" or "edit"
+  const [selectedUser, setSelectedUser] = useState(null); // Track selected user for editing
+    const [isUploadOpen, setIsUploadOpen] = useState(false);
+
+  const handleOpenUpload = () => {
+    setIsUploadOpen(true);
+  };
+
+  const handleCloseUpload = () => {
+    setIsUploadOpen(false);
+  };
 
   const mockedCardData = [
     {
@@ -100,6 +114,24 @@ function UserManager() {
     },
   ];
 
+  const handleOpenAddModal = () => {
+    setModalMode("add");
+    setSelectedUser(null);
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (user) => {
+    setModalMode("edit");
+    setSelectedUser(user);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setModalMode("add");
+    setSelectedUser(null);
+  };
+
   return (
     <div>
       <div className="max-w-[380px] mx-auto text-[#6B6B6B] my-6 lg:max-w-[1280px] lg:px-11 lg:w-full">
@@ -122,7 +154,7 @@ function UserManager() {
               className="border border-[#DADADA] rounded px-2 py-1 w-[287.4px] lg:bg-[#FFFFFF80]"
             />
             <button
-              onClick={() => setIsModalOpen(true)}
+              onClick={handleOpenAddModal}
               className="bg-[#208CD4] flex items-center gap-2 px-3 rounded-sm"
             >
               <img src={add} alt="" className="w-[10px] h-[10px]" />
@@ -146,8 +178,14 @@ function UserManager() {
                 </div>
 
                 <div className="flex items-center gap-1">
-                  <img src={component_11} alt="" className="w-[56px] h-[42px]" />
-                  <img src={component_13} alt="" className="w-[56px] h-[42px]" />
+                  <img src={component_11} alt="" className="w-[56px] h-[42px]"         onClick={handleOpenUpload}
+/>
+                  <img
+                    src={component_13}
+                    alt="Edit"
+                    className="w-[56px] h-[42px] cursor-pointer"
+                    onClick={() => handleOpenEditModal(card)}
+                  />
                 </div>
               </div>
 
@@ -202,7 +240,14 @@ function UserManager() {
           ))}
         </div>
       </div>
-      <AddUserModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <AddUserModal
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        name={modalMode === "add" ? "Add New User" : "Edit User"}
+        user={selectedUser}
+      />
+            <UploadComponent isOpen={isUploadOpen} onClose={handleCloseUpload} />
+
     </div>
   );
 }

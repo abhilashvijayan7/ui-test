@@ -1,10 +1,84 @@
-const AddUserModal = ({ isOpen, onClose }) => {
+import React, { useState, useEffect } from "react";
+
+const AddUserModal = ({ isOpen, onClose, name, user }) => {
+  // State to manage form inputs
+  const [formData, setFormData] = useState({
+    dateOfJoining: "",
+    vendorType: "Admin",
+    vendorName: "",
+    gender: "Male",
+    dateOfBirth: "",
+    designation: "",
+    company: "",
+    address: "",
+    location: "",
+    contactNo: "",
+    email: "",
+    timeInterval: "",
+    devices: "",
+  });
+
+  // Pre-populate form with user data when in edit mode
+  useEffect(() => {
+    if (user && name === "Edit User") {
+      setFormData({
+        dateOfJoining: user.doj ? user.doj.split(" ")[0] : "", // Format date for input (YYYY-MM-DD)
+        vendorType: user.role || "Admin",
+        vendorName: user.companyName || "",
+        gender: user.gender || "Male",
+        dateOfBirth: user.dob ? user.dob.split(" ")[0] : "", // Format date for input
+        designation: "", // Not in user data, set as empty
+        company: user.company || "",
+        address: user.home || "",
+        location: user.location || "",
+        contactNo: user.call || "",
+        email: user.mail || "",
+        timeInterval: "", // Not in user data, set as empty
+        devices: "", // Not in user data, set as empty
+      });
+    } else {
+      // Reset form for add mode
+      setFormData({
+        dateOfJoining: "",
+        vendorType: "Admin",
+        vendorName: "",
+        gender: "Male",
+        dateOfBirth: "",
+        designation: "",
+        company: "",
+        address: "",
+        location: "",
+        contactNo: "",
+        email: "",
+        timeInterval: "",
+        devices: "",
+      });
+    }
+  }, [user, name, isOpen]);
+
+  // Handle input changes
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  // Handle form submission
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (name === "Edit User") {
+      console.log("Editing user:", { ...formData, id: user?.apiKey }); // Include user ID for edit
+    } else {
+      console.log("Adding new user:", formData);
+    }
+    onClose(); // Close modal after submission
+  };
+
   return (
     isOpen && (
-      <div className="fixed inset-0 bg-[#DADADA] bg-opacity-50 flex items-center justify-center z-50 ">
-        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md ">
+      <div className="fixed inset-0 bg-[#DADADA] bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
           <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-bold">Add New User</h2>
+            <h2 className="text-xl font-bold">{name}</h2>
             <button
               onClick={onClose}
               className="text-gray-500 hover:text-gray-700"
@@ -24,7 +98,7 @@ const AddUserModal = ({ isOpen, onClose }) => {
               </svg>
             </button>
           </div>
-          <form className="space-y-4 ">
+          <form className="space-y-4" onSubmit={handleSubmit}>
             <div className="lg:flex lg:gap-4">
               <div>
                 <div>
@@ -33,15 +107,22 @@ const AddUserModal = ({ isOpen, onClose }) => {
                   </label>
                   <input
                     type="date"
-                    // Current date and time in IST
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md "
+                    name="dateOfJoining"
+                    value={formData.dateOfJoining}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
                     Vendor Type
                   </label>
-                  <select className="mt-1 block w-full border border-[#DADADA] rounded-md ">
+                  <select
+                    name="vendorType"
+                    value={formData.vendorType}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
+                  >
                     <option>Admin</option>
                     <option>Renderer</option>
                   </select>
@@ -52,14 +133,22 @@ const AddUserModal = ({ isOpen, onClose }) => {
                   </label>
                   <input
                     type="text"
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md "
+                    name="vendorName"
+                    value={formData.vendorName}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
                     Gender
                   </label>
-                  <select className="mt-1 block w-full border border-[#DADADA] rounded-md ">
+                  <select
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
+                  >
                     <option>Male</option>
                     <option>Female</option>
                   </select>
@@ -70,7 +159,10 @@ const AddUserModal = ({ isOpen, onClose }) => {
                   </label>
                   <input
                     type="date"
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md "
+                    name="dateOfBirth"
+                    value={formData.dateOfBirth}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
                   />
                 </div>
                 <div>
@@ -79,7 +171,10 @@ const AddUserModal = ({ isOpen, onClose }) => {
                   </label>
                   <input
                     type="text"
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md "
+                    name="designation"
+                    value={formData.designation}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
                   />
                 </div>
                 <div>
@@ -88,7 +183,10 @@ const AddUserModal = ({ isOpen, onClose }) => {
                   </label>
                   <input
                     type="text"
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md "
+                    name="company"
+                    value={formData.company}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
                   />
                 </div>
               </div>
@@ -100,7 +198,10 @@ const AddUserModal = ({ isOpen, onClose }) => {
                   </label>
                   <input
                     type="text"
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md "
+                    name="address"
+                    value={formData.address}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
                   />
                 </div>
                 <div>
@@ -109,7 +210,10 @@ const AddUserModal = ({ isOpen, onClose }) => {
                   </label>
                   <input
                     type="text"
-                    className="mt-1 block w-full  border border-[#DADADA] rounded-md "
+                    name="location"
+                    value={formData.location}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
                   />
                 </div>
                 <div>
@@ -118,7 +222,10 @@ const AddUserModal = ({ isOpen, onClose }) => {
                   </label>
                   <input
                     type="text"
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md "
+                    name="contactNo"
+                    value={formData.contactNo}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
                   />
                 </div>
                 <div>
@@ -127,7 +234,10 @@ const AddUserModal = ({ isOpen, onClose }) => {
                   </label>
                   <input
                     type="email"
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md "
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
                   />
                 </div>
                 <div>
@@ -136,7 +246,10 @@ const AddUserModal = ({ isOpen, onClose }) => {
                   </label>
                   <input
                     type="text"
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md "
+                    name="timeInterval"
+                    value={formData.timeInterval}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
                   />
                 </div>
                 <div>
@@ -145,7 +258,10 @@ const AddUserModal = ({ isOpen, onClose }) => {
                   </label>
                   <input
                     type="text"
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md "
+                    name="devices"
+                    value={formData.devices}
+                    onChange={handleChange}
+                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
                   />
                 </div>
               </div>
@@ -155,7 +271,7 @@ const AddUserModal = ({ isOpen, onClose }) => {
                 type="submit"
                 className="bg-[#208CD4] text-white px-4 py-2 rounded-md hover:bg-[#1a6ea4]"
               >
-                Submit
+                {name === "Edit User" ? "Update" : "Submit"}
               </button>
             </div>
           </form>
