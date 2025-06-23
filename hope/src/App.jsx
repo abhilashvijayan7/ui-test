@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import Sidebar from "./components/Sidebar";
 import Home from "./pages/Home";
+import UserManager from "./pages/UserManager";
 
 // Placeholder components for other routes
 function MyDevice() {
@@ -11,9 +12,9 @@ function DeviceManager() {
   return <div className="p-6 text-[#4E4D4D] text-[24px]">Device Manager Page</div>;
 }
 
-function UserManager() {
-  return <div className="p-6 text-[#4E4D4D] text-[24px]">User Manager Page</div>;
-}
+// function UserManager() {
+//   return <div className="p-6 text-[#4E4D4D] text-[24px]">User Manager Page</div>;
+// }
 
 function Support() {
   return <div className="p-6 text-[#4E4D4D] text-[24px]">Support Page</div>;
