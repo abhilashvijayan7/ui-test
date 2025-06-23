@@ -134,7 +134,7 @@ function UserManager() {
 
   return (
     <div>
-      <div className="max-w-[380px] mx-auto text-[#6B6B6B] my-6 lg:max-w-[1280px] lg:px-11 lg:w-full">
+      <div className="max-w-[450px] mx-auto text-[#6B6B6B] my-6 lg:max-w-[1280px] lg:px-11 lg:w-full">
         <div className="font-[500] text-[14px] lg:flex lg:justify-between lg:items-center">
           <div>
             <p className="text-[#4E4D4D] font-[700] text-[28px] mb-[20px]">
