@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import cheveron_right from "../images/cheveron-right.png";
 import add from "../images/add.png";
 import image from "../images/image.png";
@@ -14,9 +14,11 @@ import home from "../images/home.png";
 import humidity_low from "../images/humidity_low.png";
 import location_on from "../images/location_on.png";
 import encrypted from "../images/encrypted.png";
+import AddUserModal from "../components/AddUserModal";
 
 function UserManager() {
-  // Mocked backend data for six cards
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
   const mockedCardData = [
     {
       companyName: "KRP Aqua Tech 1",
@@ -119,14 +121,17 @@ function UserManager() {
               placeholder="Search"
               className="border border-[#DADADA] rounded px-2 py-1 w-[287.4px] lg:bg-[#FFFFFF80]"
             />
-            <button className="bg-[#208CD4] flex items-center gap-2 px-3 rounded-sm ">
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="bg-[#208CD4] flex items-center gap-2 px-3 rounded-sm"
+            >
               <img src={add} alt="" className="w-[10px] h-[10px]" />
               <p className="font-[400] text-[12px] text-[#FFFFFF]">Add User</p>
             </button>
           </div>
         </div>
 
-        <div className="grid grid-cols-1   lg:grid-cols-3 gap-4 bg-[#FFFFFF] p-4 rounded-xl">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 bg-[#FFFFFF] p-4 rounded-xl">
           {mockedCardData.map((card, cardIndex) => (
             <div
               className="card-div font-[400] text-[14px] border-1 border-[#DADADA] rounded-lg px-[16px] py-[24px]"
@@ -141,16 +146,8 @@ function UserManager() {
                 </div>
 
                 <div className="flex items-center gap-1">
-                  <img
-                    src={component_11}
-                    alt=""
-                    className="w-[56px] h-[42px]"
-                  />
-                  <img
-                    src={component_13}
-                    alt=""
-                    className="w-[56px] h-[42px]"
-                  />
+                  <img src={component_11} alt="" className="w-[56px] h-[42px]" />
+                  <img src={component_13} alt="" className="w-[56px] h-[42px]" />
                 </div>
               </div>
 
@@ -164,14 +161,10 @@ function UserManager() {
                 ].map((item, detailIndex) => (
                   <div
                     key={detailIndex}
-                    className="flex border-b border-[#DADADA] py-[12px] "
+                    className="flex border-b border-[#DADADA] py-[12px]"
                   >
                     <div className="flex items-center w-[46%] gap-0.5">
-                      <img
-                        src={item.icon}
-                        alt=""
-                        className="w-[24px] h-[24px]"
-                      />
+                      <img src={item.icon} alt="" className="w-[24px] h-[24px]" />
                       <p>{item.value}</p>
                     </div>
                     <div className="flex items-center gap-0.5">
@@ -209,6 +202,7 @@ function UserManager() {
           ))}
         </div>
       </div>
+      <AddUserModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   );
 }
