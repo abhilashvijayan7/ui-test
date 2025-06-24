@@ -14,16 +14,14 @@ import bar_chart_4_bars from "../images/bar_chart_4_bars.png";
 import encrypted_1 from "../images/encrypted (1).png";
 import enterprise from "../images/enterprise.png";
 
-
 import UploadComponent from "../components/UploadComponent";
+import AddDevice from "../components/AddNewDevice";
+import EditDevice from "../components/EditDevice";
 
-import AddNewDevice from "../components/AddNewDevice";
-
-
-function UserManager() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [modalMode, setModalMode] = useState("add"); // Track modal mode: "add" or "edit"
-  const [selectedUser, setSelectedUser] = useState(null); // Track selected user for editing
+function DeviceManager() {
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedDevice, setSelectedDevice] = useState(null);
   const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   const handleOpenUpload = () => {
@@ -38,110 +36,99 @@ function UserManager() {
     {
       deviceId: "IM012WCH0000033",
       installationDate: "Entry Date : 22-06-2025 11:14:54 ",
-
       locationCode: "IM0102WCH",
       maxDataLimit: "Maximum Data : 100",
-
       entryDate: "22-06-2025 11:14:54",
       apiKeyLabel: "API Key :",
-
       tankCapacity: "18",
       serialNumber: "1",
-
       locationName: "Pollachi Municipality",
     },
     {
       deviceId: "IM012WCH0000033",
       installationDate: "Entry Date : 22-06-2025 11:14:54 ",
-
       locationCode: "IM0102WCH",
       maxDataLimit: "Maximum Data : 100",
-
       entryDate: "22-06-2025 11:14:54",
       apiKeyLabel: "API Key :",
-
       tankCapacity: "18",
       serialNumber: "1",
-
       locationName: "Pollachi Municipality",
     },
     {
       deviceId: "IM012WCH0000033",
       installationDate: "Entry Date : 22-06-2025 11:14:54 ",
-
       locationCode: "IM0102WCH",
       maxDataLimit: "Maximum Data : 100",
-
       entryDate: "22-06-2025 11:14:54",
       apiKeyLabel: "API Key :",
-
       tankCapacity: "18",
       serialNumber: "1",
-
       locationName: "Pollachi Municipality",
     },
     {
       deviceId: "IM012WCH0000033",
       installationDate: "Entry Date : 22-06-2025 11:14:54 ",
-
       locationCode: "IM0102WCH",
       maxDataLimit: "Maximum Data : 100",
-
       entryDate: "22-06-2025 11:14:54",
       apiKeyLabel: "API Key :",
-
       tankCapacity: "18",
       serialNumber: "1",
-
       locationName: "Pollachi Municipality",
     },
     {
       deviceId: "IM012WCH0000033",
       installationDate: "Entry Date : 22-06-2025 11:14:54 ",
-
       locationCode: "IM0102WCH",
       maxDataLimit: "Maximum Data : 100",
-
       entryDate: "22-06-2025 11:14:54",
       apiKeyLabel: "API Key :",
-
       tankCapacity: "18",
       serialNumber: "1",
-
       locationName: "Pollachi Municipality",
     },
     {
       deviceId: "IM012WCH0000033",
       installationDate: "Entry Date : 22-06-2025 11:14:54 ",
-
       locationCode: "IM0102WCH",
       maxDataLimit: "Maximum Data : 100",
-
       entryDate: "22-06-2025 11:14:54",
       apiKeyLabel: "API Key :",
-
       tankCapacity: "18",
       serialNumber: "1",
-
       locationName: "Pollachi Municipality",
     },
   ];
+
   const handleOpenAddModal = () => {
-    setModalMode("add");
-    setSelectedUser(null);
-    setIsModalOpen(true);
+    setIsAddModalOpen(true);
   };
 
-  const handleOpenEditModal = (user) => {
-    setModalMode("edit");
-    setSelectedUser(user);
-    setIsModalOpen(true);
+  const handleOpenEditModal = (device) => {
+    setSelectedDevice(device);
+    setIsEditModalOpen(true);
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
-    setModalMode("add");
-    setSelectedUser(null);
+  const handleCloseAddModal = () => {
+    setIsAddModalOpen(false);
+  };
+
+  const handleCloseEditModal = () => {
+    setIsEditModalOpen(false);
+    setSelectedDevice(null);
+  };
+
+  const handleAddDevice = (deviceData) => {
+    // Handle adding new device logic here
+    console.log("Adding new device:", deviceData);
+    handleCloseAddModal();
+  };
+
+  const handleEditDevice = (deviceData) => {
+    // Handle editing device logic here
+    console.log("Editing device:", deviceData);
+    handleCloseEditModal();
   };
 
   return (
@@ -262,15 +249,27 @@ function UserManager() {
           ))}
         </div>
       </div>
-      <AddNewDevice
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        name={modalMode === "add" ? "Add New User" : "Edit User"}
-        user={selectedUser}
+
+      {/* Separate Modals */}
+      <AddDevice
+        isOpen={isAddModalOpen}
+        onClose={handleCloseAddModal}
+        onSubmit={handleAddDevice}
       />
-      <UploadComponent isOpen={isUploadOpen} onClose={handleCloseUpload} />
+      
+      <EditDevice
+        isOpen={isEditModalOpen}
+        onClose={handleCloseEditModal}
+        onSubmit={handleEditDevice}
+        device={selectedDevice}
+      />
+      
+      <UploadComponent 
+        isOpen={isUploadOpen} 
+        onClose={handleCloseUpload} 
+      />
     </div>
   );
 }
 
-export default UserManager;
+export default DeviceManager;
