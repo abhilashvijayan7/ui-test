@@ -76,7 +76,7 @@ const AddUserModal = ({ isOpen, onClose, name, user }) => {
   return (
     isOpen && (
       <div className="fixed inset-0 bg-[#DADADA] bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md">
+        <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md lg:max-w-4xl">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold">{name}</h2>
             <button
@@ -98,9 +98,9 @@ const AddUserModal = ({ isOpen, onClose, name, user }) => {
               </svg>
             </button>
           </div>
-          <form className="space-y-4" onSubmit={handleSubmit}>
+          <div className="space-y-4">
             <div className="lg:flex lg:gap-4">
-              <div>
+              <div className="flex-1">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
                     Date Of Joining
@@ -110,7 +110,7 @@ const AddUserModal = ({ isOpen, onClose, name, user }) => {
                     name="dateOfJoining"
                     value={formData.dateOfJoining}
                     onChange={handleChange}
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
+                    className="mt-1 block w-full h-10 border border-[#DADADA] rounded-md px-3 py-2"
                   />
                 </div>
                 <div>
@@ -121,7 +121,7 @@ const AddUserModal = ({ isOpen, onClose, name, user }) => {
                     name="vendorType"
                     value={formData.vendorType}
                     onChange={handleChange}
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
+                    className="mt-1 block w-full h-10 border border-[#DADADA] rounded-md px-3 py-2"
                   >
                     <option>Admin</option>
                     <option>Renderer</option>
@@ -136,7 +136,7 @@ const AddUserModal = ({ isOpen, onClose, name, user }) => {
                     name="vendorName"
                     value={formData.vendorName}
                     onChange={handleChange}
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
+                    className="mt-1 block w-full h-10 border border-[#DADADA] rounded-md px-3 py-2"
                   />
                 </div>
                 <div>
@@ -147,7 +147,7 @@ const AddUserModal = ({ isOpen, onClose, name, user }) => {
                     name="gender"
                     value={formData.gender}
                     onChange={handleChange}
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
+                    className="mt-1 block w-full h-10 border border-[#DADADA] rounded-md px-3 py-2"
                   >
                     <option>Male</option>
                     <option>Female</option>
@@ -162,7 +162,7 @@ const AddUserModal = ({ isOpen, onClose, name, user }) => {
                     name="dateOfBirth"
                     value={formData.dateOfBirth}
                     onChange={handleChange}
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
+                    className="mt-1 block w-full h-10 border border-[#DADADA] rounded-md px-3 py-2"
                   />
                 </div>
                 <div>
@@ -174,7 +174,7 @@ const AddUserModal = ({ isOpen, onClose, name, user }) => {
                     name="designation"
                     value={formData.designation}
                     onChange={handleChange}
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
+                    className="mt-1 block w-full h-10 border border-[#DADADA] rounded-md px-3 py-2"
                   />
                 </div>
                 <div>
@@ -186,12 +186,12 @@ const AddUserModal = ({ isOpen, onClose, name, user }) => {
                     name="company"
                     value={formData.company}
                     onChange={handleChange}
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
+                    className="mt-1 block w-full h-10 border border-[#DADADA] rounded-md px-3 py-2"
                   />
                 </div>
               </div>
 
-              <div>
+              <div className="flex-1">
                 <div>
                   <label className="block text-sm font-medium text-gray-700">
                     Address
@@ -201,7 +201,7 @@ const AddUserModal = ({ isOpen, onClose, name, user }) => {
                     name="address"
                     value={formData.address}
                     onChange={handleChange}
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
+                    className="mt-1 block w-full h-10 border border-[#DADADA] rounded-md px-3 py-2"
                   />
                 </div>
                 <div>
@@ -213,7 +213,7 @@ const AddUserModal = ({ isOpen, onClose, name, user }) => {
                     name="location"
                     value={formData.location}
                     onChange={handleChange}
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
+                    className="mt-1 block w-full h-10 border border-[#DADADA] rounded-md px-3 py-2"
                   />
                 </div>
                 <div>
@@ -225,7 +225,7 @@ const AddUserModal = ({ isOpen, onClose, name, user }) => {
                     name="contactNo"
                     value={formData.contactNo}
                     onChange={handleChange}
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
+                    className="mt-1 block w-full h-10 border border-[#DADADA] rounded-md px-3 py-2"
                   />
                 </div>
                 <div>
@@ -237,7 +237,7 @@ const AddUserModal = ({ isOpen, onClose, name, user }) => {
                     name="email"
                     value={formData.email}
                     onChange={handleChange}
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
+                    className="mt-1 block w-full h-10 border border-[#DADADA] rounded-md px-3 py-2"
                   />
                 </div>
                 <div>
@@ -249,7 +249,7 @@ const AddUserModal = ({ isOpen, onClose, name, user }) => {
                     name="timeInterval"
                     value={formData.timeInterval}
                     onChange={handleChange}
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
+                    className="mt-1 block w-full h-10 border border-[#DADADA] rounded-md px-3 py-2"
                   />
                 </div>
                 <div>
@@ -261,7 +261,7 @@ const AddUserModal = ({ isOpen, onClose, name, user }) => {
                     name="devices"
                     value={formData.devices}
                     onChange={handleChange}
-                    className="mt-1 block w-full border border-[#DADADA] rounded-md p-2"
+                    className="mt-1 block w-full h-10 border border-[#DADADA] rounded-md px-3 py-2"
                   />
                 </div>
               </div>
@@ -269,12 +269,13 @@ const AddUserModal = ({ isOpen, onClose, name, user }) => {
             <div className="flex justify-end mt-4">
               <button
                 type="submit"
+                onClick={handleSubmit}
                 className="bg-[#208CD4] text-white px-4 py-2 rounded-md hover:bg-[#1a6ea4]"
               >
                 {name === "Edit User" ? "Update" : "Submit"}
               </button>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     )

@@ -1,9 +1,6 @@
 import React, { useState } from "react";
-import cheveron_right from "../images/cheveron-right.png";
 import language_1 from "../images/language (1).png";
 import group_3 from "../images/group (3).png";
-
-
 import {
   Search,
   Filter,
@@ -12,6 +9,7 @@ import {
   Eye,
   FileText,
   Calculator,
+  ChevronRight,
 } from "lucide-react";
 
 function MyDevice() {
@@ -53,28 +51,31 @@ function MyDevice() {
 
   return (
     <div>
-      <div className="max-w-[450px] mx-auto text-[#6B6B6B] my-6 lg:max-w-[1280px] lg:px-11 lg:w-full">
+      {/* Header Section */}
+      <div className="max-w-[450px] mx-auto text-[#6B6B6B] my-6 lg:max-w-none lg:px-11 lg:w-full">
         <div className="font-[500] text-[14px] lg:flex lg:justify-between lg:items-center">
           <div>
             <p className="text-[#4E4D4D] font-[700] text-[28px] mb-[20px]">
               My Devices{" "}
             </p>
-            <div className="flex bg-gray-100 w-[156px] py-1 px-2 rounded-sm mb-[18px]">
+            <div className="flex bg-gray-100 w-[156px] py-1 px-2 rounded-sm mb-[18px] items-center">
               <p>Home</p>
-              <img src={cheveron_right} alt="" className="w-[20px] h-[20px]" />
+              <ChevronRight className="w-[20px] h-[20px] mx-1" />
               <p className="text-[#208CD4]">My Devices</p>
             </div>
           </div>
         </div>
       </div>
-      <div className="min-h-screen  p-4 lg:p-6 max-w-[480px] mx-auto text-[#6B6B6B] my-6 lg:max-w-[1280px] ">
-        <div className="max-w-full bg-white rounded-lg shadow-sm border border-gray-200">
+
+      {/* Main Content */}
+      <div className="min-h-screen p-4 lg:p-6 max-w-[480px] mx-auto text-[#6B6B6B] my-6 lg:max-w-none lg:mx-0 lg:px-11">
+        <div className="w-full bg-white rounded-lg shadow-sm border border-gray-200">
           {/* Header Controls */}
           <div className="p-4 lg:p-6 border-b border-gray-200">
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
               {/* Report Type Dropdown */}
               <div className="relative">
-                <img
+                 <img
                   src={language_1}
                   alt=""
                   className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 pointer-events-none z-10"
