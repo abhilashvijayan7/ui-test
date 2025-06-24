@@ -14,9 +14,11 @@ import bar_chart_4_bars from "../images/bar_chart_4_bars.png";
 import encrypted_1 from "../images/encrypted (1).png";
 import enterprise from "../images/enterprise.png";
 
-import AddUserModal from "../components/AddUserModal";
 
 import UploadComponent from "../components/UploadComponent";
+
+import AddNewDevice from "../components/AddNewDevice";
+
 
 function UserManager() {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -260,7 +262,7 @@ function UserManager() {
           ))}
         </div>
       </div>
-      <AddUserModal
+      <AddNewDevice
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         name={modalMode === "add" ? "Add New User" : "Edit User"}
