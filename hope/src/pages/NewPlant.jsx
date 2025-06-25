@@ -483,16 +483,16 @@ function NewPlant() {
       <div className="p-4 lg:p-6 max-w-[480px] mx-auto text-[#6B6B6B] my-6 lg:max-w-[1280px]">
         <div className="max-w-full bg-white rounded-2xl shadow-sm border border-gray-200">
           <div className="py-6 px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center mb-6">
+            <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
               <h2 className="text-2xl font-semibold text-gray-900">Plants List</h2>
-              <div className="flex items-center gap-4">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                 <div className="relative">
                   <input
                     type="text"
-                    placeholder="Search"
+                    placeholder="Search plants..."
                     value={searchQuery}
                     onChange={handleSearchChange}
-                    className="w-64 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    className="w-full sm:w-64 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                   />
                 </div>
                 <select 
@@ -501,8 +501,8 @@ function NewPlant() {
                   className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
                 >
                   <option value={5}>Show 5</option>
-                  <option value={10}>Show 10</option>
-                  <option value={15}>Show 15</option>
+                  <option value={25}>Show 25</option>
+                  <option value={50}>Show 50</option>
                   <option value={100}>Show 100</option>
                 </select>
               </div>
@@ -530,7 +530,8 @@ function NewPlant() {
               </div>
             ) : (
               <>
-                <div className="overflow-x-auto">
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
                   <table className="w-full border-collapse">
                     <thead>
                       <tr className="bg-gray-50">
@@ -584,9 +585,58 @@ function NewPlant() {
                   </table>
                 </div>
 
+                {/* Mobile Card View */}
+                <div className="md:hidden space-y-4">
+                  {paginatedPlants.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      {searchQuery ? 'No plants found matching your search.' : 'No plants added yet.'}
+                    </div>
+                  ) : (
+                    paginatedPlants.map((plant, index) => (
+                      <div key={plant.plant_id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="bg-gray-100 text-gray-700 text-xs font-medium px-2 py-1 rounded">
+                              #{startIndex + index + 1}
+                            </span>
+                            <h3 className="font-semibold text-gray-900 text-lg">{plant.plant_name}</h3>
+                          </div>
+                          <div className="flex gap-2">
+                            <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                              Edit
+                            </button>
+                            <button className="text-red-600 hover:text-red-800 text-sm font-medium">
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                        
+                        <div className="space-y-2 text-sm">
+                          <div className="flex flex-col">
+                            <span className="text-gray-500 font-medium">Location:</span>
+                            <span className="text-gray-900">
+                              {locations.find(loc => loc.id === plant.plant_location_id)?.address || 'Unknown'}
+                            </span>
+                          </div>
+                          
+                          <div className="flex flex-col">
+                            <span className="text-gray-500 font-medium">Contact Person:</span>
+                            <span className="text-gray-900">{plant.contact_person}</span>
+                          </div>
+                          
+                          <div className="flex flex-col">
+                            <span className="text-gray-500 font-medium">Contact Number:</span>
+                            <span className="text-gray-900">{plant.contact_phone}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
                 {/* Pagination */}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-2 mt-6">
+                  <div className="flex flex-wrap items-center justify-center gap-2 mt-6">
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
@@ -596,22 +646,41 @@ function NewPlant() {
                           : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
                       }`}
                     >
-                      Previous
+                      Prev
                     </button>
                     
-                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-                      <button
-                        key={page}
-                        onClick={() => handlePageChange(page)}
-                        className={`px-3 py-2 text-sm font-medium rounded ${
-                          currentPage === page
-                            ? 'bg-gray-400 text-white'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                        }`}
-                      >
-                        {page}
-                      </button>
-                    ))}
+                    {/* Show page numbers with ellipsis for mobile */}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => {
+                      // Show first page, last page, current page, and pages around current page
+                      const showPage = page === 1 || 
+                                      page === totalPages || 
+                                      (page >= currentPage - 1 && page <= currentPage + 1);
+                      
+                      if (!showPage) {
+                        // Show ellipsis for hidden pages
+                        if (page === 2 && currentPage > 4) {
+                          return <span key={page} className="px-2 text-gray-500">...</span>;
+                        }
+                        if (page === totalPages - 1 && currentPage < totalPages - 3) {
+                          return <span key={page} className="px-2 text-gray-500">...</span>;
+                        }
+                        return null;
+                      }
+                      
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          className={`px-3 py-2 text-sm font-medium rounded ${
+                            currentPage === page
+                              ? 'bg-gray-400 text-white'
+                              : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    })}
                     
                     <button
                       onClick={() => handlePageChange(currentPage + 1)}
