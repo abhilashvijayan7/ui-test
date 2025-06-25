@@ -19,9 +19,8 @@ function AddMotor() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
   const [motorsPerPage, setMotorsPerPage] = useState(10);
-  const [editingMotorId, setEditingMotorId] = useState(null); // New state for editing
+  const [editingMotorId, setEditingMotorId] = useState(null);
 
-  // Auto-dismiss timers
   useEffect(() => {
     if (submitSuccess) {
       const timer = setTimeout(() => {
@@ -40,7 +39,6 @@ function AddMotor() {
     }
   }, [submitError]);
 
-  // Fetch motors when component mounts
   useEffect(() => {
     fetchMotors();
   }, []);
@@ -123,7 +121,6 @@ function AddMotor() {
 
       console.log('Submitting motor data:', motorData);
 
-      // Determine if we're adding or updating
       const url = editingMotorId 
         ? `https://water-pump.onrender.com/api/motors/${editingMotorId}`
         : 'https://water-pump.onrender.com/api/motors';
@@ -150,7 +147,6 @@ function AddMotor() {
 
       setSubmitSuccess(true);
       
-      // Reset form and editing state
       setFormData({
         motorName: '',
         motorType: '',
@@ -160,7 +156,6 @@ function AddMotor() {
       });
       setEditingMotorId(null);
       
-      // Refresh motors list
       await fetchMotors();
 
     } catch (error) {
@@ -173,7 +168,6 @@ function AddMotor() {
 
  const handleEdit = (motor) => {
   console.log('Motor object:', motor);
-  // Format the installation_date to YYYY-MM-DD
   const formattedInstallationDate = motor.installation_date
     ? new Date(motor.installation_date).toISOString().split('T')[0]
     : new Date().toISOString().split('T')[0];
@@ -185,7 +179,7 @@ function AddMotor() {
     modelNumber: motor.model_number || '',
     installationDate: formattedInstallationDate
   });
-  setEditingMotorId(motor.motor_id); // Assuming motor_id is the correct field based on your data
+  setEditingMotorId(motor.motor_id); 
   setSubmitError('');
   setSubmitSuccess(false);
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -204,7 +198,6 @@ function AddMotor() {
     setSubmitSuccess(false);
   };
 
-  // Filter and paginate motors
   const filteredMotors = motors.filter(motor =>
     motor.motor_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     motor.motor_type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -255,7 +248,6 @@ function AddMotor() {
                 {editingMotorId ? 'Edit Motor' : 'Add Motor'}
               </h1>
               
-              {/* Success Message */}
               {submitSuccess && (
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 relative">
                   <div className="flex justify-between items-start">
@@ -274,7 +266,6 @@ function AddMotor() {
                 </div>
               )}
 
-              {/* Error Messages */}
               {submitError && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 relative">
                   <div className="flex justify-between items-start">
@@ -292,7 +283,6 @@ function AddMotor() {
               )}
               
               <div className="space-y-6">
-                {/* First Row - Motor Name and Motor Type */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div>
                     <label htmlFor="motorName" className="block text-sm font-medium text-gray-700 mb-2">
@@ -327,7 +317,6 @@ function AddMotor() {
                   </div>
                 </div>
 
-                {/* Second Row - Manufacturer and Model Number */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div>
                     <label htmlFor="manufacturer" className="block text-sm font-medium text-gray-700 mb-2">
@@ -362,7 +351,6 @@ function AddMotor() {
                   </div>
                 </div>
 
-                {/* Third Row - Installation Date */}
                 <div className="grid grid-cols-1 lp:grid-cols-2 gap-6">
                   <div>
                     <label htmlFor="installationDate" className="block text-sm font-medium text-gray-700 mb-2">
