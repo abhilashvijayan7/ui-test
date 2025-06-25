@@ -17,6 +17,12 @@ function NewPlant() {
   const [submitError, setSubmitError] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [locationsError, setLocationsError] = useState('');
+  const [plants, setPlants] = useState([]);
+  const [isLoadingPlants, setIsLoadingPlants] = useState(true);
+  const [plantsError, setPlantsError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [plantsPerPage, setPlantsPerPage] = useState(10);
 
   // Auto-dismiss timers
   useEffect(() => {
@@ -40,7 +46,41 @@ function NewPlant() {
   // Fetch locations when component mounts
   useEffect(() => {
     fetchLocations();
+    fetchPlants();
   }, []);
+
+  const fetchPlants = async () => {
+    try {
+      setIsLoadingPlants(true);
+      setPlantsError('');
+      
+      const response = await fetch('https://water-pump.onrender.com/api/plants');
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      const data = await response.json();
+      console.log('Fetched plants:', data);
+      
+      // Sort plants to show most recent first
+      // Assuming the API returns plants with plant_id or created_at field
+      // If there's a created_at timestamp, use that; otherwise use plant_id as proxy for creation order
+      const sortedPlants = data.sort((a, b) => {
+        // First try to sort by created_at if it exists
+        if (a.created_at && b.created_at) {
+          return new Date(b.created_at) - new Date(a.created_at);
+        }
+        // Fallback to sorting by plant_id (assuming higher ID = more recent)
+        return (b.plant_id || 0) - (a.plant_id || 0);
+      });
+      
+      setPlants(sortedPlants);
+    } catch (error) {
+      console.error('Error fetching plants:', error);
+      setPlantsError('Failed to load plants. Please refresh the page.');
+    } finally {
+      setIsLoadingPlants(false);
+    }
+  };
 
   const fetchLocations = async () => {
     try {
@@ -183,6 +223,9 @@ function NewPlant() {
 
       setSubmitSuccess(true);
       
+      // Refresh plants list after successful submission
+      await fetchPlants();
+      
       // Clear form data after successful submission
       setFormData({
         plantName: '',
@@ -199,6 +242,31 @@ function NewPlant() {
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  // Filter and paginate plants (maintaining sort order)
+  const filteredPlants = plants.filter(plant =>
+    plant.plant_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    plant.contact_person?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    plant.contact_phone?.includes(searchQuery)
+  );
+
+  const totalPages = Math.ceil(filteredPlants.length / plantsPerPage);
+  const startIndex = (currentPage - 1) * plantsPerPage;
+  const paginatedPlants = filteredPlants.slice(startIndex, startIndex + plantsPerPage);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1); // Reset to first page when searching
+  };
+
+  const handleShowChange = (e) => {
+    setPlantsPerPage(Number(e.target.value));
+    setCurrentPage(1); // Reset to first page when changing items per page
   };
 
   return (
@@ -407,6 +475,159 @@ function NewPlant() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Plants Table Section */}
+      <div className="p-4 lg:p-6 max-w-[480px] mx-auto text-[#6B6B6B] my-6 lg:max-w-[1280px]">
+        <div className="max-w-full bg-white rounded-2xl shadow-sm border border-gray-200">
+          <div className="py-6 px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900">Plants List</h2>
+              <div className="flex items-center gap-4">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Search"
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    className="w-64 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  />
+                </div>
+                <select 
+                  value={plantsPerPage}
+                  onChange={handleShowChange}
+                  className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                >
+                  <option value={5}>Show 5</option>
+                  <option value={10}>Show 10</option>
+                  <option value={15}>Show 15</option>
+                  <option value={100}>Show 100</option>
+                </select>
+              </div>
+            </div>
+
+            {plantsError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <div className="flex justify-between items-start">
+                  <div className="text-red-800">
+                    <p className="text-sm font-medium">{plantsError}</p>
+                  </div>
+                  <button
+                    onClick={fetchPlants}
+                    className="text-sm underline hover:no-underline"
+                  >
+                    Retry
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {isLoadingPlants ? (
+              <div className="text-center py-8">
+                <p className="text-gray-500">Loading plants...</p>
+              </div>
+            ) : (
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700">S/No</th>
+                        <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700">Plant Name</th>
+                        <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700">Location</th>
+                        <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700">Contact Person</th>
+                        <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700">Contact Number</th>
+                        <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white">
+                      {paginatedPlants.length === 0 ? (
+                        <tr>
+                          <td colSpan="6" className="border border-gray-300 px-4 py-8 text-center text-gray-500">
+                            {searchQuery ? 'No plants found matching your search.' : 'No plants added yet.'}
+                          </td>
+                        </tr>
+                      ) : (
+                        paginatedPlants.map((plant, index) => (
+                          <tr key={plant.plant_id} className="hover:bg-gray-50">
+                            <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
+                              {startIndex + index + 1}
+                            </td>
+                            <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
+                              {plant.plant_name}
+                            </td>
+                            <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
+                              {locations.find(loc => loc.id === plant.plant_location_id)?.address || 'Unknown'}
+                            </td>
+                            <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
+                              {plant.contact_person}
+                            </td>
+                            <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
+                              {plant.contact_phone}
+                            </td>
+                            <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
+                              <div className="flex gap-2">
+                                <button className="text-blue-600 hover:text-blue-800 text-sm font-medium">
+                                  Edit
+                                </button>
+                                <button className="text-red-600 hover:text-red-800 text-sm font-medium">
+                                  Delete
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-2 mt-6">
+                    <button
+                      onClick={() => handlePageChange(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className={`px-3 py-2 text-sm font-medium rounded ${
+                        currentPage === 1
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                      }`}
+                    >
+                      Previous
+                    </button>
+                    
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                      <button
+                        key={page}
+                        onClick={() => handlePageChange(page)}
+                        className={`px-3 py-2 text-sm font-medium rounded ${
+                          currentPage === page
+                            ? 'bg-gray-400 text-white'
+                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    ))}
+                    
+                    <button
+                      onClick={() => handlePageChange(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className={`px-3 py-2 text-sm font-medium rounded ${
+                        currentPage === totalPages
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                      }`}
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         </div>
       </div>
