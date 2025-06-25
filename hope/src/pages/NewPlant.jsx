@@ -18,6 +18,25 @@ function NewPlant() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [locationsError, setLocationsError] = useState('');
 
+  // Auto-dismiss timers
+  useEffect(() => {
+    if (submitSuccess) {
+      const timer = setTimeout(() => {
+        setSubmitSuccess(false);
+      }, 5000); // Dismiss after 5 seconds
+      return () => clearTimeout(timer);
+    }
+  }, [submitSuccess]);
+
+  useEffect(() => {
+    if (submitError) {
+      const timer = setTimeout(() => {
+        setSubmitError('');
+      }, 8000); // Dismiss after 8 seconds (longer for errors)
+      return () => clearTimeout(timer);
+    }
+  }, [submitError]);
+
   // Fetch locations when component mounts
   useEffect(() => {
     fetchLocations();
@@ -33,7 +52,7 @@ function NewPlant() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       const data = await response.json();
-      console.log('Fetched locations:', data); // Debug log
+      console.log('Fetched locations:', data);
       setLocations(data);
     } catch (error) {
       console.error('Error fetching locations:', error);
@@ -88,8 +107,8 @@ function NewPlant() {
         throw new Error('Please select a valid location');
       }
 
-      // Prepare data according to the API schema
-      const submitData = {
+      // Prepare data for plant creation
+      const plantData = {
         plant_name: formData.plantName.trim(),
         plant_location_id: selectedLocation.id,
         contact_person: formData.contactPerson.trim(),
@@ -99,34 +118,69 @@ function NewPlant() {
       };
 
       console.log('Selected location:', selectedLocation);
-      console.log('Submitting data:', submitData);
+      console.log('Submitting plant data:', plantData);
 
-      const response = await fetch('https://water-pump.onrender.com/api/plants', {
+      // First API call: Create plant
+      const plantResponse = await fetch('https://water-pump.onrender.com/api/plants', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(submitData),
+        body: JSON.stringify(plantData),
       });
 
-      // Get the response text to see what the server is returning
-      const responseText = await response.text();
-      console.log('Response status:', response.status);
-      console.log('Response text:', responseText);
+      const plantResponseText = await plantResponse.text();
+      console.log('Plant creation response status:', plantResponse.status);
+      console.log('Plant creation response text:', plantResponseText);
 
-      if (!response.ok) {
-        // Try to parse the error message from the server
+      if (!plantResponse.ok) {
         try {
-          const errorData = JSON.parse(responseText);
-          throw new Error(errorData.message || errorData.error || `Server Error: ${response.status}`);
+          const errorData = JSON.parse(plantResponseText);
+          throw new Error(errorData.message || errorData.error || `Server Error: ${plantResponse.status}`);
         } catch (parseError) {
-          throw new Error(`Server Error (${response.status}): ${responseText || 'Unknown error'}`);
+          throw new Error(`Server Error (${plantResponse.status}): ${plantResponseText || 'Unknown error'}`);
         }
       }
 
-      // Parse the successful response
-      const result = JSON.parse(responseText);
-      console.log('Plant added successfully:', result);
+      // Parse the successful plant creation response
+      const plantResult = JSON.parse(plantResponseText);
+      console.log('Plant added successfully:', plantResult);
+
+      // Second API call: Create plant-location relationship
+      // Using the correct field names from the API response
+      const plantLocationData = {
+        plant_id: plantResult.plant_id, // Using plant_id from response instead of id
+        location_id: plantResult.plant_location_id, // Using plant_location_id from response
+        installation_date: new Date().toISOString().split('T')[0] // Current date in YYYY-MM-DD format
+      };
+
+      console.log('Submitting plant-location data:', plantLocationData);
+
+      const plantLocationResponse = await fetch('https://water-pump.onrender.com/api/plant-locations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(plantLocationData),
+      });
+
+      const plantLocationResponseText = await plantLocationResponse.text();
+      console.log('Plant-location creation response status:', plantLocationResponse.status);
+      console.log('Plant-location creation response text:', plantLocationResponseText);
+
+      if (!plantLocationResponse.ok) {
+        try {
+          const errorData = JSON.parse(plantLocationResponseText);
+          throw new Error(errorData.message || errorData.error || `Server Error: ${plantLocationResponse.status}`);
+        } catch (parseError) {
+          throw new Error(`Server Error (${plantLocationResponse.status}): ${plantLocationResponseText || 'Unknown error'}`);
+        }
+      }
+
+      // Parse the successful plant-location creation response
+      const plantLocationResult = JSON.parse(plantLocationResponseText);
+      console.log('Plant-location added successfully:', plantLocationResult);
+
       setSubmitSuccess(true);
       
       // Clear form data after successful submission
@@ -140,8 +194,8 @@ function NewPlant() {
       });
 
     } catch (error) {
-      console.error('Error adding plant:', error);
-      setSubmitError(error.message || 'Failed to add plant. Please try again.');
+      console.error('Error:', error);
+      setSubmitError(error.message || 'Failed to add plant or plant-location. Please try again.');
     } finally {
       setIsSubmitting(false);
     }
@@ -172,22 +226,34 @@ function NewPlant() {
               
               {/* Success Message */}
               {submitSuccess && (
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
-                  <div className="flex">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6 relative">
+                  <div className="flex justify-between items-start">
                     <div className="text-green-800">
-                      <p className="text-sm font-medium">Plant added successfully!</p>
+                      <p className="text-sm font-medium">Plant and location relationship added successfully!</p>
                     </div>
+                    <button
+                      onClick={() => setSubmitSuccess(false)}
+                      className="text-green-600 hover:text-green-800 text-lg font-bold leading-none"
+                    >
+                      ×
+                    </button>
                   </div>
                 </div>
               )}
 
               {/* Error Messages */}
               {submitError && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                  <div className="flex">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6 relative">
+                  <div className="flex justify-between items-start">
                     <div className="text-red-800">
                       <p className="text-sm font-medium">{submitError}</p>
                     </div>
+                    <button
+                      onClick={() => setSubmitError('')}
+                      className="text-red-600 hover:text-red-800 text-lg font-bold leading-none"
+                    >
+                      ×
+                    </button>
                   </div>
                 </div>
               )}
