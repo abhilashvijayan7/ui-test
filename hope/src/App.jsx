@@ -5,7 +5,7 @@ import UserManager from "./pages/UserManager";
 import DeviceManager from "./pages/DeviceManager";
 import MyDevice from "./pages/MyDevice";
 import NewPlant from "./pages/NewPlant";
-
+import AddMotor from "./pages/AddMotor";
 // Placeholder components for other routes
 
 
@@ -33,6 +33,9 @@ function App() {
       <Sidebar />
       <Routes>
         <Route path="/home" element={<Home />} />
+        <Route path="/add-motor" element={<AddMotor />} />
+
+        
         <Route path="/my-device" element={<MyDevice />} />
         <Route path="/new-plant" element={<NewPlant />} />
         <Route path="/device-manager" element={<DeviceManager />} />
