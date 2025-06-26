@@ -26,10 +26,8 @@ function NewPlant() {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [plantsPerPage, setPlantsPerPage] = useState(10);
-  // State for controlling ApplyMotorModal
   const [isMotorModalOpen, setIsMotorModalOpen] = useState(false);
   const [selectedPlant, setSelectedPlant] = useState(null);
-  // State for controlling ApplySensorModal
   const [isSensorModalOpen, setIsSensorModalOpen] = useState(false);
 
   useEffect(() => {
@@ -267,57 +265,25 @@ function NewPlant() {
   };
 
   const handleApplyMotor = (plant) => {
+    if (!plant?.plant_id) {
+      setPlantsError("Invalid plant selected. Please try again.");
+      return;
+    }
     setSelectedPlant(plant);
     setIsMotorModalOpen(true);
   };
 
-  const handleCloseMotorModal = () => {
+  const handleCloseMotorModal = async () => {
     setIsMotorModalOpen(false);
     setSelectedPlant(null);
-  };
-
-  const handleApplyMotorSubmit = async (motors) => {
-    try {
-      if (!selectedPlant) throw new Error("No plant selected");
-      if (!motors || motors.length === 0) throw new Error("No motors selected");
-
-      const invalidMotors = motors.filter((motor) => !motor.selectedMotor);
-      if (invalidMotors.length > 0) {
-        throw new Error("All motors must have a selected motor value");
-      }
-
-      const motorData = motors.map((motor) => ({
-        motor_id: motor.selectedMotor,
-        max_running_time: motor.maxRunningTime,
-        working_order: motor.workingOrder,
-        plant_id: selectedPlant.plant_id,
-      }));
-
-      const response = await fetch(`https://water-pump.onrender.com/api/plants/${selectedPlant.plant_id}/motors`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(motorData),
-      });
-
-      const responseText = await response.text();
-      if (!response.ok) {
-        try {
-          const errorData = JSON.parse(responseText);
-          throw new Error(errorData.message || errorData.error || `Server Error: ${response.status}`);
-        } catch (parseError) {
-          throw new Error(`Server Error (${response.status}): ${responseText || "Unknown error"}`);
-        }
-      }
-
-      setSubmitSuccess(true);
-      await fetchPlants();
-    } catch (error) {
-      console.error("Error applying motors:", error);
-      setSubmitError(error.message || "Failed to apply motors. Please try again.");
-    }
+    await fetchPlants(); // Refresh plant list after modal closes
   };
 
   const handleApplySensor = (plant) => {
+    if (!plant?.plant_id) {
+      setPlantsError("Invalid plant selected. Please try again.");
+      return;
+    }
     setSelectedPlant(plant);
     setIsSensorModalOpen(true);
   };
@@ -698,27 +664,27 @@ function NewPlant() {
                             <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">{startIndex + index + 1}</td>
                             <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">{plant.plant_name}</td>
                             <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
-                              {locations.find((loc) => loc.id === plant.plant_location_id)?.address || "Unknown"}
+                              {locations.find((loc) => loc.id === plant.plant_location_id)?.address || "N/A"}
                             </td>
                             <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">{plant.contact_person}</td>
                             <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">{plant.contact_phone}</td>
                             <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
-                              <div className="flex gap-2">
+                              <div className="flex space-x-2">
                                 <button
                                   onClick={() => handleEditPlant(plant)}
-                                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                                  className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 underline"
                                 >
                                   Edit
                                 </button>
                                 <button
                                   onClick={() => handleApplyMotor(plant)}
-                                  className="text-green-600 hover:text-green-800 text-sm font-medium"
+                                  className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 underline"
                                 >
                                   Apply Motor
                                 </button>
                                 <button
                                   onClick={() => handleApplySensor(plant)}
-                                  className="text-purple-600 hover:text-purple-800 text-sm font-medium"
+                                  className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 underline"
                                 >
                                   Apply Sensor
                                 </button>
@@ -733,55 +699,45 @@ function NewPlant() {
 
                 <div className="md:hidden space-y-4">
                   {paginatedPlants.length === 0 ? (
-                    <div className="text-center py-8 text-gray-500">
+                    <p className="text-center text-gray-500 py-8">
                       {searchQuery ? "No plants found matching your search." : "No plants added yet."}
-                    </div>
+                    </p>
                   ) : (
                     paginatedPlants.map((plant, index) => (
-                      <div key={plant.plant_id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="flex items-center gap-2">
-                            <span className="bg-gray-100 text-gray-700 text-xs font-medium px-2 py-1 rounded">
-                              #{startIndex + index + 1}
-                            </span>
-                            <h3 className="font-semibold text-gray-900 text-lg">{plant.plant_name}</h3>
-                          </div>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => handleEditPlant(plant)}
-                              className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleApplyMotor(plant)}
-                              className="text-green-600 hover:text-green-800 text-sm font-medium"
-                            >
-                              Apply Motor
-                            </button>
-                            <button
-                              onClick={() => handleApplySensor(plant)}
-                              className="text-purple-600 hover:text-purple-800 text-sm font-medium"
-                            >
-                              Apply Sensor
-                            </button>
-                          </div>
-                        </div>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex flex-col">
-                            <span className="text-gray-500 font-medium">Location:</span>
-                            <span className="text-gray-900">
-                              {locations.find((loc) => loc.id === plant.plant_location_id)?.address || "Unknown"}
-                            </span>
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-gray-500 font-medium">Contact Person:</span>
-                            <span className="text-gray-900">{plant.contact_person}</span>
-                          </div>
-                          <div className="flex flex-col">
-                            <span className="text-gray-500 font-medium">Contact Number:</span>
-                            <span className="text-gray-900">{plant.contact_phone}</span>
-                          </div>
+                      <div key={plant.plant_id} className="border border-gray-300 rounded-lg p-4">
+                        <p className="text-sm font-medium text-gray-900">#{startIndex + index + 1}</p>
+                        <p className="text-sm text-gray-700">
+                          <span className="font-medium">Name:</span> {plant.plant_name}
+                        </p>
+                        <p className="text-sm text-gray-700">
+                          <span className="font-medium">Location:</span>{" "}
+                          {locations.find((loc) => loc.id === plant.plant_location_id)?.address || "N/A"}
+                        </p>
+                        <p className="text-sm text-gray-700">
+                          <span className="font-medium">Contact:</span> {plant.contact_person}
+                        </p>
+                        <p className="text-sm text-gray-700">
+                          <span className="font-medium">Phone:</span> {plant.contact_phone}
+                        </p>
+                        <div className="flex space-x-2 mt-2">
+                          <button
+                            onClick={() => handleEditPlant(plant)}
+                            className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 underline"
+                          >
+                            Edit
+                          </button>
+                          <button
+                            onClick={() => handleApplyMotor(plant)}
+                            className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 underline"
+                          >
+                            Apply Motor
+                          </button>
+                          <button
+                            onClick={() => handleApplySensor(plant)}
+                            className="px-3 py-1 text-sm text-blue-600 hover:text-blue-800 underline"
+                          >
+                            Apply Sensor
+                          </button>
                         </div>
                       </div>
                     ))
@@ -789,7 +745,7 @@ function NewPlant() {
                 </div>
 
                 {totalPages > 1 && (
-                  <div className="flex flex-wrap items-center justify-center gap-2 mt-6">
+                  <div className="flex justify-between items-center mt-6">
                     <button
                       onClick={() => handlePageChange(currentPage - 1)}
                       disabled={currentPage === 1}
@@ -797,9 +753,9 @@ function NewPlant() {
                         currentPage === 1 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                       }`}
                     >
-                      Prev
+                      Previous
                     </button>
-                    {renderPagination()}
+                    <div className="flex space-x-1">{renderPagination()}</div>
                     <button
                       onClick={() => handlePageChange(currentPage + 1)}
                       disabled={currentPage === totalPages}
@@ -820,7 +776,7 @@ function NewPlant() {
       <ApplyMotorModal
         isOpen={isMotorModalOpen}
         onClose={handleCloseMotorModal}
-        onSave={handleApplyMotorSubmit}
+        plant_id={selectedPlant?.plant_id}
       />
       <ApplySensorModal
         isOpen={isSensorModalOpen}
