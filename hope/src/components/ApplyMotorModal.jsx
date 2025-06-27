@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, Plus, Minus, X } from 'lucide-react';
-import axios from 'axios'; // Correct import for axios
+import { ChevronDown, Minus, X } from 'lucide-react';
+import axios from 'axios';
 
 export default function ApplyMotorModal({ isOpen, onClose, plant_id }) {
   const [motors, setMotors] = useState([
@@ -9,6 +9,12 @@ export default function ApplyMotorModal({ isOpen, onClose, plant_id }) {
   const [availableMotors, setAvailableMotors] = useState([]);
   const [isLoadingMotors, setIsLoadingMotors] = useState(false);
   const [motorsError, setMotorsError] = useState('');
+  const [plantMotors, setPlantMotors] = useState([]);
+  const [isLoadingPlantMotors, setIsLoadingPlantMotors] = useState(false);
+  const [plantMotorsError, setPlantMotorsError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [motorsPerPage, setMotorsPerPage] = useState(10);
 
   // Fetch available motors when modal opens
   useEffect(() => {
@@ -18,7 +24,6 @@ export default function ApplyMotorModal({ isOpen, onClose, plant_id }) {
           setIsLoadingMotors(true);
           setMotorsError('');
           const response = await axios.get('https://water-pump.onrender.com/api/motors');
-          // Assuming API returns array of objects with { motor_id, name }
           setAvailableMotors(response.data);
         } catch (error) {
           console.error('Error fetching motors:', error);
@@ -31,16 +36,29 @@ export default function ApplyMotorModal({ isOpen, onClose, plant_id }) {
     }
   }, [isOpen]);
 
-  const addMotor = () => {
-    const newId = Math.max(...motors.map(m => m.id)) + 1;
-    const newMotor = {
-      id: newId,
-      selectedMotor: '',
-      maxRunningTime: '',
-      workingOrder: ''
-    };
-    setMotors([...motors, newMotor]);
-  };
+  // Fetch plant motors when modal opens
+  useEffect(() => {
+    if (isOpen && plant_id) {
+      const fetchPlantMotors = async () => {
+        try {
+          setIsLoadingPlantMotors(true);
+          setPlantMotorsError('');
+          const response = await axios.get('https://water-pump.onrender.com/api/plantmotors');
+          const filteredMotors = response.data.filter(motor => motor.plant_id === parseInt(plant_id, 10));
+          const sortedMotors = filteredMotors.sort((a, b) => 
+            new Date(b.installation_date) - new Date(a.installation_date)
+          );
+          setPlantMotors(sortedMotors);
+        } catch (error) {
+          console.error('Error fetching plant motors:', error);
+          setPlantMotorsError('Failed to load plant motors. Please try again.');
+        } finally {
+          setIsLoadingPlantMotors(false);
+        }
+      };
+      fetchPlantMotors();
+    }
+  }, [isOpen, plant_id]);
 
   const removeMotor = (id) => {
     if (motors.length > 1) {
@@ -51,7 +69,6 @@ export default function ApplyMotorModal({ isOpen, onClose, plant_id }) {
 
   const handleMotorChange = (id, field, value) => {
     if (field === 'maxRunningTime') {
-      // Restrict maxRunningTime to 1-6
       if (value === '' || (Number(value) >= 1 && Number(value) <= 6)) {
         setMotors(motors.map(motor =>
           motor.id === id ? { ...motor, [field]: value } : motor
@@ -65,10 +82,7 @@ export default function ApplyMotorModal({ isOpen, onClose, plant_id }) {
   };
 
   const handleSave = async () => {
-    // Debug plant_id
     console.log('Raw plant_id prop:', plant_id, 'Type:', typeof plant_id);
-    
-    // Validate plant_id first
     if (!plant_id || plant_id === '' || plant_id === 'undefined' || plant_id === 'null') {
       console.error('Invalid plant_id:', plant_id);
       setMotorsError(`Invalid plant ID: "${plant_id}". Please select a plant first.`);
@@ -82,7 +96,6 @@ export default function ApplyMotorModal({ isOpen, onClose, plant_id }) {
       return;
     }
 
-    // Validate inputs
     const invalidMotors = motors.filter(motor => 
       motor.selectedMotor === '' ||
       motor.maxRunningTime === '' || 
@@ -98,14 +111,12 @@ export default function ApplyMotorModal({ isOpen, onClose, plant_id }) {
       return;
     }
 
-    // Check for duplicate workingOrder values
     const workingOrders = motors.map(m => Number(m.workingOrder));
     if (new Set(workingOrders).size !== workingOrders.length) {
       setMotorsError('Working Order values must be unique for each motor.');
       return;
     }
 
-    // Check for duplicate motor_id selections
     const selectedMotorIds = motors.map(m => Number(m.selectedMotor));
     if (new Set(selectedMotorIds).size !== selectedMotorIds.length) {
       setMotorsError('Each motor must be unique. Please select different motors.');
@@ -114,7 +125,6 @@ export default function ApplyMotorModal({ isOpen, onClose, plant_id }) {
 
     try {
       setMotorsError('');
-      
       console.log('Final plantIdNum:', plantIdNum, 'Type:', typeof plantIdNum);
       
       const payload = motors.map(motor => ({
@@ -126,13 +136,12 @@ export default function ApplyMotorModal({ isOpen, onClose, plant_id }) {
         motor_working_order: parseInt(motor.workingOrder, 10)
       }));
 
-      console.log('Payload being sent 1:', payload);
+      console.log('Payload being sent:', payload);
 
       const [singlepayload] = payload;
 
-      console.log('Payload being sent:', singlepayload);
+      console.log('Single payload being sent:', singlepayload);
       
-      // Validate payload before sending
       const invalidPayload = payload.some(item => 
         !item.plant_id || isNaN(item.plant_id) || 
         !item.motor_id || isNaN(item.motor_id) ||
@@ -146,16 +155,17 @@ export default function ApplyMotorModal({ isOpen, onClose, plant_id }) {
         return;
       }
 
-      // Note: If the server expects a single object instead of an array, modify to send one motor at a time
-      // or use a different endpoint (e.g., POST /api/plantmotors for each motor).
       const response = await axios.post('https://water-pump.onrender.com/api/plantmotors', singlepayload);
-
-      // Refresh plants to ensure parent component updates
       await axios.get('https://water-pump.onrender.com/api/plants');
+      const plantMotorsResponse = await axios.get('https://water-pump.onrender.com/api/plantmotors');
+      const filteredMotors = plantMotorsResponse.data.filter(motor => motor.plant_id === plantIdNum);
+      setPlantMotors(filteredMotors.sort((a, b) => 
+        new Date(b.installation_date) - new Date(a.installation_date)
+      ));
       onClose();
     } catch (error) {
       console.error('Error submitting motors:', error);
-      console.error('Server response:', error.response?.data); // Log full server response for debugging
+      console.error('Server response:', error.response?.data);
       setMotorsError(
         error.response?.data?.message || 
         error.response?.data?.error || 
@@ -183,6 +193,32 @@ export default function ApplyMotorModal({ isOpen, onClose, plant_id }) {
     };
   }, [isOpen, onClose]);
 
+  // Search and pagination for plant motors
+  const filteredPlantMotors = plantMotors.filter(motor =>
+    motor.motor_brand?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    String(motor.motor_id).includes(searchQuery) ||
+    String(motor.motor_running_time).includes(searchQuery) ||
+    String(motor.motor_working_order).includes(searchQuery)
+  );
+
+  const totalPages = Math.ceil(filteredPlantMotors.length / motorsPerPage);
+  const startIndex = (currentPage - 1) * motorsPerPage;
+  const paginatedPlantMotors = filteredPlantMotors.slice(startIndex, startIndex + motorsPerPage);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handleShowChange = (e) => {
+    setMotorsPerPage(Number(e.target.value));
+    setCurrentPage(1);
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -192,7 +228,7 @@ export default function ApplyMotorModal({ isOpen, onClose, plant_id }) {
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
             <h2 className="text-2xl font-semibold text-gray-800">Apply Motor</h2>
-            <p className="text-sm text-gray-500 mt-1">Plant ID: {plant_id || 'Not provided'} (Type: {typeof plant_id})</p>
+            <p className="text-sm text-gray-500 mt-1">Plant ID: {plant_id || 'Not provided'} </p>
           </div>
           <button
             onClick={onClose}
@@ -219,6 +255,7 @@ export default function ApplyMotorModal({ isOpen, onClose, plant_id }) {
             </div>
           )}
 
+ Bread crumb navigation
           <div className="space-y-6">
             {motors.map((motor) => (
               <div key={motor.id} className="grid grid-cols-12 gap-6 items-center">
@@ -238,7 +275,10 @@ export default function ApplyMotorModal({ isOpen, onClose, plant_id }) {
                         {isLoadingMotors ? 'Loading motors...' : 'Select a motor...'}
                       </option>
                       {availableMotors.map((availableMotor) => (
-                        <option key={availableMotor.motor_id} value={availableMotor.motor_id}>
+                        <option 
+                          key={availableMotor.motor_id} 
+                          value={availableMotor.motor_id}
+                        >
                           {availableMotor.motor_name || `Motor ${availableMotor.motor_id}`}
                         </option>
                       ))}
@@ -291,13 +331,6 @@ export default function ApplyMotorModal({ isOpen, onClose, plant_id }) {
                       <Minus className="w-5 h-5" />
                     </button>
                   )}
-                  <button
-                    onClick={addMotor}
-                    className="w-10 h-10 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition-colors"
-                    title="Add motor"
-                  >
-                    <Plus className="w-5 h-5" />
-                  </button>
                 </div>
               </div>
             ))}
@@ -319,6 +352,221 @@ export default function ApplyMotorModal({ isOpen, onClose, plant_id }) {
           >
             Save Changes
           </button>
+        </div>
+
+        {/* Plant Motors Table Section */}
+        <div className="p-6">
+          <div className="max-w-full bg-white rounded-2xl shadow-sm border border-gray-200">
+            <div className="py-6 px-4 sm:px-6 lg:px-8">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
+                <h2 className="text-2xl font-semibold text-gray-900">Applied Motors for Plant {plant_id}</h2>
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="Search applied motors..."
+                      value={searchQuery}
+                      onChange={handleSearchChange}
+                      className="w-full sm:w-64 px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                    />
+                  </div>
+                  <select 
+                    value={motorsPerPage}
+                    onChange={handleShowChange}
+                    className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  >
+                    <option value={1}>Show 1</option>
+                    <option value={10}>Show 10</option>
+                    <option value={25}>Show 25</option>
+                    <option value={50}>Show 50</option>
+                  </select>
+                </div>
+              </div>
+
+              {plantMotorsError && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                  <div className="flex justify-between items-start">
+                    <div className="text-red-800">
+                      <p className="text-sm font-medium">{plantMotorsError}</p>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setPlantMotorsError('');
+                        const fetchPlantMotors = async () => {
+                          try {
+                            setIsLoadingPlantMotors(true);
+                            const response = await axios.get('https://water-pump.onrender.com/api/plantmotors');
+                            const filteredMotors = response.data.filter(motor => motor.plant_id === parseInt(plant_id, 10));
+                            setPlantMotors(filteredMotors.sort((a, b) => 
+                              new Date(b.installation_date) - new Date(a.installation_date)
+                            ));
+                          } catch (error) {
+                            console.error('Error retrying plant motors fetch:', error);
+                            setPlantMotorsError('Failed to load plant motors. Please try again.');
+                          } finally {
+                            setIsLoadingPlantMotors(false);
+                          }
+                        };
+                        fetchPlantMotors();
+                      }}
+                      className="text-sm underline hover:no-underline"
+                    >
+                      Retry
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {isLoadingPlantMotors ? (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">Loading applied motors...</p>
+                </div>
+              ) : (
+                <>
+                  {/* Desktop Table View */}
+                  <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr className="bg-gray-50">
+                          <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700">S/No</th>
+                          <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700">Motor ID</th>
+                          <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700">Motor Brand</th>
+                          <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700">Max Running Time (Hours)</th>
+                          <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700">Working Order</th>
+                          <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700">Installation Date</th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white">
+                        {paginatedPlantMotors.length === 0 ? (
+                          <tr>
+                            <td colSpan="6" className="border border-gray-300 px-4 py-8 text-center text-gray-500">
+                              {searchQuery ? 'No motors found matching your search.' : 'No motors applied to this plant yet.'}
+                            </td>
+                          </tr>
+                        ) : (
+                          paginatedPlantMotors.map((motor, index) => (
+                            <tr key={motor.plant_motor_id} className="hover:bg-gray-50">
+                              <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
+                                {startIndex + index + 1}
+                              </td>
+                              <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
+                                {motor.motor_id}
+                              </td>
+                              <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
+                                {motor.motor_brand}
+                              </td>
+                              <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
+                                {motor.motor_running_time}
+                              </td>
+                              <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
+                                {motor.motor_working_order}
+                              </td>
+                              <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
+                                {new Date(motor.installation_date).toLocaleDateString()}
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-4">
+                    {paginatedPlantMotors.length === 0 ? (
+                      <div className="text-center py-8 text-gray-500">
+                        {searchQuery ? 'No motors found matching your search.' : 'No motors applied to this plant yet.'}
+                      </div>
+                    ) : (
+                      paginatedPlantMotors.map((motor, index) => (
+                        <div key={motor.plant_motor_id} className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="flex items-center gap-2">
+                              <span className="bg-gray-100 text-gray-700 text-xs font-medium px-2 py-1 rounded">
+                                #{startIndex + index + 1}
+                              </span>
+                              <h3 className="font-semibold text-gray-900 text-lg">Motor {motor.motor_id}</h3>
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-2 gap-4 text-sm">
+                            <div className="flex flex-col">
+                              <span className="text-gray-500 font-medium">Motor Brand:</span>
+                              <span className="text-gray-900">{motor.motor_brand}</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-gray-500 font-medium">Max Running Time:</span>
+                              <span className="text-gray-900">{motor.motor_running_time} Hours</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-gray-500 font-medium">Working Order:</span>
+                              <span className="text-gray-900">{motor.motor_working_order}</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-gray-500 font-medium">Installation Date:</span>
+                              <span className="text-gray-900">{new Date(motor.installation_date).toLocaleDateString()}</span>
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </div>
+
+                  {/* Pagination */}
+                  {totalPages > 1 && (
+                    <div className="flex flex-wrap items-center justify-center gap-2 mt-6">
+                      <button
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className={`px-4 py-2 text-sm font-medium rounded ${
+                          currentPage === 1
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                        }`}
+                      >
+                        Previous
+                      </button>
+                      {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => handlePageChange(pageNum)}
+                            className={`px-3 py-2 text-sm font-medium rounded ${
+                              currentPage === pageNum
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                      <button
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        disabled={currentPage === totalPages}
+                        className={`px-4 py-2 text-sm font-medium rounded ${
+                          currentPage === totalPages
+                            ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                            : 'bg-gray-300 text-gray-700 hover:bg-gray-400'
+                        }`}
+                      >
+                        Next
+                      </button>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </div>
