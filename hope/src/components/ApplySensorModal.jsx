@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronRight, X } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import axios from 'axios';
 
-export default function ApplySensorModal({ isOpen, onClose, plantId }) {
-  const [sensors, setSensors] = useState([
-    { id: 1, sensorType: '', minValue: '', maxValue: '' },
-    { id: 2, sensorType: '', minValue: '', maxValue: '' },
-  ]);
+export default function ApplySensorModal({ isOpen = false, onClose = () => {}, plantId = '' }) {
+  const [sensor, setSensor] = useState({
+    sensorType: '', // Stores sensor_name
+    minValue: '',
+    maxValue: ''
+  });
   const [sensorTypes, setSensorTypes] = useState([]);
   const [plantSensors, setPlantSensors] = useState([]);
   const [isLoadingPlantSensors, setIsLoadingPlantSensors] = useState(false);
@@ -16,60 +17,65 @@ export default function ApplySensorModal({ isOpen, onClose, plantId }) {
   const [sensorsPerPage, setSensorsPerPage] = useState(10);
   const [sensorsError, setSensorsError] = useState('');
 
-  // Fetch sensor types and plant sensors when modal opens
+  // Fetch sensor relations and plant sensors when modal opens
   useEffect(() => {
-    if (isOpen) {
-      const fetchSensorTypes = async () => {
-        try {
-          const response = await axios.get('https://water-pump.onrender.com/api/sensors/sensor-types');
-          setSensorTypes(response.data); // Expecting array of objects: [{ sensor_type_id, sensor_type_name, ... }]
-        } catch (error) {
-          console.error('Error fetching sensor types:', error);
-          setSensorsError('Failed to load sensor types. Please try again.');
-        }
-      };
+    if (!isOpen) return;
 
-      const fetchPlantSensors = async () => {
-        try {
-          setIsLoadingPlantSensors(true);
-          setPlantSensorsError('');
-          const response = await axios.get('https://water-pump.onrender.com/api/plantsensors');
-          const filteredSensors = response.data.filter(sensor => sensor.plant_id === parseInt(plantId, 10));
-          const sortedSensors = filteredSensors.sort((a, b) => 
-            new Date(b.installation_date) - new Date(a.installation_date)
-          );
-          setPlantSensors(sortedSensors);
-        } catch (error) {
-          console.error('Error fetching plant sensors:', error);
-          setPlantSensorsError('Failed to load plant sensors. Please try again.');
-        } finally {
-          setIsLoadingPlantSensors(false);
-        }
-      };
-
-      fetchSensorTypes();
-      if (plantId) {
-        fetchPlantSensors();
+    const fetchSensorTypes = async () => {
+      try {
+        const response = await axios.get('https://water-pump.onrender.com/api/sensors/relations');
+        setSensorTypes(Array.isArray(response.data) ? response.data : []);
+      } catch (error) {
+        console.error('Error fetching sensor relations:', error);
+        setSensorsError('Failed to load sensor relations. Please try again.');
       }
+    };
+
+    const fetchPlantSensors = async () => {
+      try {
+        setIsLoadingPlantSensors(true);
+        setPlantSensorsError('');
+        const response = await axios.get('https://water-pump.onrender.com/api/plantsensors');
+        const filteredSensors = Array.isArray(response.data)
+          ? response.data.filter(sensor => sensor.plant_id === parseInt(plantId, 10))
+          : [];
+        const sortedSensors = filteredSensors.sort((a, b) => 
+          new Date(b.installation_date) - new Date(a.installation_date)
+        );
+        setPlantSensors(sortedSensors);
+      } catch (error) {
+        console.error('Error fetching plant sensors:', error);
+        setPlantSensorsError('Failed to load plant sensors. Please try again.');
+      } finally {
+        setIsLoadingPlantSensors(false);
+      }
+    };
+
+    fetchSensorTypes();
+    if (plantId && !isNaN(parseInt(plantId, 10))) {
+      fetchPlantSensors();
+    } else {
+      setPlantSensorsError('Invalid plant ID provided.');
     }
   }, [isOpen, plantId]);
 
-  const handleInputChange = (id, field, value) => {
+  // Handle input changes for the single sensor
+  const handleInputChange = (field, value) => {
     if (field === 'minValue' || field === 'maxValue') {
       if (value === '' || !isNaN(value)) {
-        setSensors(sensors.map(sensor =>
-          sensor.id === id ? { ...sensor, [field]: value } : sensor
-        ));
+        setSensor(prev => ({ ...prev, [field]: value }));
       }
     } else {
-      setSensors(sensors.map(sensor =>
-        sensor.id === id ? { ...sensor, [field]: value } : sensor
-      ));
+      setSensor(prev => ({ ...prev, [field]: value }));
     }
   };
 
+  // Get the sensor_type_name for the selected sensor_name
+  const selectedSensor = sensorTypes.find(type => type.sensor_name === sensor.sensorType);
+  const isMinMaxSensor = selectedSensor?.sensor_type_name === 'min-max';
+
+  // Handle save action for the single sensor
   const handleSave = async () => {
-    console.log('Raw plantId prop:', plantId, 'Type:', typeof plantId);
     if (!plantId || plantId === '' || plantId === 'undefined' || plantId === 'null') {
       console.error('Invalid plantId:', plantId);
       setSensorsError(`Invalid plant ID: "${plantId}". Please select a plant first.`);
@@ -83,53 +89,49 @@ export default function ApplySensorModal({ isOpen, onClose, plantId }) {
       return;
     }
 
-    const invalidSensors = sensors.filter(sensor => 
+    if (
       sensor.sensorType === '' ||
-      (sensor.sensorType === 'min-max' && (sensor.minValue === '' || isNaN(sensor.minValue) || sensor.maxValue === '' || isNaN(sensor.maxValue)))
-    );
-    if (invalidSensors.length > 0) {
-      setSensorsError('Please ensure all fields are filled: Select a sensor type, and for min-max sensors, provide numeric Min and Max Values.');
+      (isMinMaxSensor && (sensor.minValue === '' || isNaN(sensor.minValue) || sensor.maxValue === '' || isNaN(sensor.maxValue)))
+    ) {
+      setSensorsError('Please ensure all fields are filled: Select a sensor, and for min-max sensors, provide numeric Min and Max Values.');
       return;
     }
 
     try {
       setSensorsError('');
-      const payload = sensors.map(sensor => ({
+      const payload = {
         plant_id: plantIdNum,
-        sensor_type: sensor.sensorType, // Using sensor_type_name as sensor_type
-        min_value: sensor.sensorType === 'min-max' ? parseInt(sensor.minValue, 10) : null,
-        max_value: sensor.sensorType === 'min-max' ? parseInt(sensor.maxValue, 10) : null,
+        sensor_type: sensor.sensorType, // Use sensor_name as sensor_type
+        min_value: isMinMaxSensor ? parseInt(sensor.minValue, 10) : null,
+        max_value: isMinMaxSensor ? parseInt(sensor.maxValue, 10) : null,
         installation_date: new Date().toISOString().split('T')[0],
-      }));
+      };
 
       console.log('Payload being sent:', payload);
 
-      const [singlePayload] = payload;
-
-      console.log('Single payload being sent:', singlePayload);
-
-      const invalidPayload = payload.some(item => 
-        !item.plant_id || isNaN(item.plant_id) || 
-        !item.sensor_type ||
-        (item.sensor_type === 'min-max' && (!item.min_value || isNaN(item.min_value) || !item.max_value || isNaN(item.max_value)))
-      );
-
-      if (invalidPayload) {
+      if (
+        !payload.plant_id || isNaN(payload.plant_id) ||
+        !payload.sensor_type ||
+        (isMinMaxSensor && (!payload.min_value || isNaN(payload.min_value) || !payload.max_value || isNaN(payload.max_value)))
+      ) {
         console.error('Invalid payload detected:', payload);
         setSensorsError('Invalid data detected. Please check all fields.');
         return;
       }
 
-      const response = await axios.post('https://water-pump.onrender.com/api/plantsensors', singlePayload);
+      await axios.post('https://water-pump.onrender.com/api/plantsensors', payload);
       await axios.get('https://water-pump.onrender.com/api/plants');
       const plantSensorsResponse = await axios.get('https://water-pump.onrender.com/api/plantsensors');
-      const filteredSensors = plantSensorsResponse.data.filter(sensor => sensor.plant_id === plantIdNum);
+      const filteredSensors = Array.isArray(plantSensorsResponse.data)
+        ? plantSensorsResponse.data.filter(sensor => sensor.plant_id === plantIdNum)
+        : [];
       setPlantSensors(filteredSensors.sort((a, b) => 
         new Date(b.installation_date) - new Date(a.installation_date)
       ));
+      setSensor({ sensorType: '', minValue: '', maxValue: '' }); // Reset form
       onClose();
     } catch (error) {
-      console.error('Error submitting sensors:', error);
+      console.error('Error submitting sensor:', error);
       console.error('Server response:', error.response?.data);
       setSensorsError(
         error.response?.data?.message || 
@@ -142,9 +144,7 @@ export default function ApplySensorModal({ isOpen, onClose, plantId }) {
   // Close modal on Escape key
   useEffect(() => {
     const handleEscape = (e) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
+      if (e.key === 'Escape') onClose();
     };
 
     if (isOpen) {
@@ -169,9 +169,7 @@ export default function ApplySensorModal({ isOpen, onClose, plantId }) {
   const startIndex = (currentPage - 1) * sensorsPerPage;
   const paginatedPlantSensors = filteredPlantSensors.slice(startIndex, startIndex + sensorsPerPage);
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
+  const handlePageChange = (page) => setCurrentPage(page);
 
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
@@ -192,7 +190,7 @@ export default function ApplySensorModal({ isOpen, onClose, plantId }) {
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
           <div>
             <h2 className="text-2xl font-semibold text-gray-800">Apply Sensor</h2>
-            <p className="text-sm text-gray-500 mt-1">Plant ID: {plantId || 'Not provided'} </p>
+            <p className="text-sm text-gray-500 mt-1">Plant ID: {plantId || 'Not provided'}</p>
           </div>
           <button
             onClick={onClose}
@@ -220,67 +218,70 @@ export default function ApplySensorModal({ isOpen, onClose, plantId }) {
           )}
 
           <div className="space-y-6">
-            {sensors.map((sensor) => (
-              <div key={sensor.id} className="grid grid-cols-12 gap-6 items-center">
-                <div className="col-span-3">
-                  <label className="block text-sm font-medium text-gray-600 mb-2">
-                    Select Sensor
-                  </label>
-                  <div className="relative">
-                    <select
-                      className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
-                      value={sensor.sensorType}
-                      onChange={(e) => handleInputChange(sensor.id, 'sensorType', e.target.value)}
-                    >
-                      <option value="" disabled>
-                        Select Sensor Type
-                      </option>
-                      {sensorTypes.length > 0 ? (
-                        sensorTypes.map((type) => (
-                          <option key={type.sensor_type_id} value={type.sensor_type_name}>
-                            {type.sensor_type_name}
-                          </option>
-                        ))
-                      ) : (
-                        <option value="" disabled>
-                          No sensor types available
+            <div className="grid grid-cols-12 gap-6 items-center">
+              <div className="col-span-3">
+                <label className="block text-sm font-medium text-gray-600 mb-2">
+                  Select Sensor
+                </label>
+                <div className="relative">
+                  <select
+                    className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none"
+                    value={sensor.sensorType}
+                    onChange={(e) => handleInputChange('sensorType', e.target.value)}
+                  >
+                    <option value="" disabled>
+                      Select Sensor
+                    </option>
+                    {sensorTypes.length > 0 ? (
+                      sensorTypes.map((type) => (
+                        <option key={type.id} value={type.sensor_name}>
+                          {type.sensor_name}
                         </option>
-                      )}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
-                  </div>
+                      ))
+                    ) : (
+                      <option value="" disabled>
+                        No sensors available
+                      </option>
+                    )}
+                  </select>
+                  <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400 pointer-events-none" />
                 </div>
-                {sensor.sensorType === 'min-max' && (
-                  <>
-                    <div className="col-span-3">
-                      <label className="block text-sm font-medium text-gray-600 mb-2">
-                        Min Value
-                      </label>
-                      <input
-                        type="number"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        value={sensor.minValue}
-                        onChange={(e) => handleInputChange(sensor.id, 'minValue', e.target.value)}
-                        placeholder="1"
-                      />
-                    </div>
-                    <div className="col-span-3">
-                      <label className="block text-sm font-medium text-gray-600 mb-2">
-                        Max Value
-                      </label>
-                      <input
-                        type="number"
-                        className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                        value={sensor.maxValue}
-                        onChange={(e) => handleInputChange(sensor.id, 'maxValue', e.target.value)}
-                        placeholder="10"
-                      />
-                    </div>
-                  </>
+                {selectedSensor && (
+                  <p className="text-xs text-gray-500 mt-1 capitalize">
+                    Type: {selectedSensor.sensor_type_name || 'Unknown'}
+                  </p>
                 )}
-                <div className={sensor.sensorType === 'min-max' ? 'col-span-3' : 'col-span-9'} />
               </div>
-            ))}
+              {isMinMaxSensor && (
+                <>
+                  <div className="col-span-3">
+                    <label className="block text-sm font-medium text-gray-600 mb-2">
+                      Min Value
+                    </label>
+                    <input
+                      type="number"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      value={sensor.minValue}
+                      onChange={(e) => handleInputChange('minValue', e.target.value)}
+                      placeholder="1"
+                    />
+                  </div>
+                  <div className="col-span-3">
+                    <label className="block text-sm font-medium text-gray-600 mb-2">
+                      Max Value
+                    </label>
+                    <input
+                      type="number"
+                      className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      value={sensor.maxValue}
+                      onChange={(e) => handleInputChange('maxValue', e.target.value)}
+                      placeholder="10"
+                    />
+                  </div>
+                </>
+              )}
+              <div className={isMinMaxSensor ? 'col-span-3' : 'col-span-9'} />
+            </div>
           </div>
         </div>
 
@@ -295,10 +296,10 @@ export default function ApplySensorModal({ isOpen, onClose, plantId }) {
           <button
             onClick={handleSave}
             className="px-8 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors"
-            disabled={sensors.some((s) => 
-              s.sensorType === '' || 
-              (s.sensorType === 'min-max' && (!s.minValue || !s.maxValue || isNaN(s.minValue) || isNaN(s.maxValue)))
-            )}
+            disabled={
+              sensor.sensorType === '' ||
+              (isMinMaxSensor && (!sensor.minValue || !sensor.maxValue || isNaN(sensor.minValue) || isNaN(sensor.maxValue)))
+            }
           >
             Save Changes
           </button>
@@ -309,7 +310,7 @@ export default function ApplySensorModal({ isOpen, onClose, plantId }) {
           <div className="max-w-full bg-white rounded-2xl shadow-sm border border-gray-200">
             <div className="py-6 px-4 sm:px-6 lg:px-8">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
-                <h2 className="text-2xl font-semibold text-gray-900">Applied Sensors for Plant {plantId}</h2>
+                <h2 className="text-2xl font-semibold text-gray-900">Applied Sensors for Plant {plantId || 'Unknown'}</h2>
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                   <div className="relative">
                     <input
@@ -336,28 +337,25 @@ export default function ApplySensorModal({ isOpen, onClose, plantId }) {
               {plantSensorsError && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
                   <div className="flex justify-between items-start">
-                    <div className="text-red-800">
-                      <p className="text-sm font-medium">{plantSensorsError}</p>
-                    </div>
+                    <p className="text-sm font-medium text-red-800">{plantSensorsError}</p>
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         setPlantSensorsError('');
-                        const fetchPlantSensors = async () => {
-                          try {
-                            setIsLoadingPlantSensors(true);
-                            const response = await axios.get('https://water-pump.onrender.com/api/plantsensors');
-                            const filteredSensors = response.data.filter(sensor => sensor.plant_id === parseInt(plantId, 10));
-                            setPlantSensors(filteredSensors.sort((a, b) => 
-                              new Date(b.installation_date) - new Date(a.installation_date)
-                            ));
-                          } catch (error) {
-                            console.error('Error retrying plant sensors fetch:', error);
-                            setPlantSensorsError('Failed to load plant sensors. Please try again.');
-                          } finally {
-                            setIsLoadingPlantSensors(false);
-                          }
-                        };
-                        fetchPlantSensors();
+                        try {
+                          setIsLoadingPlantSensors(true);
+                          const response = await axios.get('https://water-pump.onrender.com/api/plantsensors');
+                          const filteredSensors = Array.isArray(response.data)
+                            ? response.data.filter(sensor => sensor.plant_id === parseInt(plantId, 10))
+                            : [];
+                          setPlantSensors(filteredSensors.sort((a, b) => 
+                            new Date(b.installation_date) - new Date(a.installation_date)
+                          ));
+                        } catch (error) {
+                          console.error('Error retrying plant sensors fetch:', error);
+                          setPlantSensorsError('Failed to load plant sensors. Please try again.');
+                        } finally {
+                          setIsLoadingPlantSensors(false);
+                        }
                       }}
                       className="text-sm underline hover:no-underline"
                     >
@@ -399,7 +397,7 @@ export default function ApplySensorModal({ isOpen, onClose, plantId }) {
                                 {startIndex + index + 1}
                               </td>
                               <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
-                                {sensor.sensor_type}
+                                {sensor.sensor_type || '-'}
                               </td>
                               <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
                                 {sensor.min_value ?? '-'}
@@ -408,7 +406,7 @@ export default function ApplySensorModal({ isOpen, onClose, plantId }) {
                                 {sensor.max_value ?? '-'}
                               </td>
                               <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
-                                {new Date(sensor.installation_date).toLocaleDateString()}
+                                {sensor.installation_date ? new Date(sensor.installation_date).toLocaleDateString() : '-'}
                               </td>
                             </tr>
                           ))
@@ -431,13 +429,13 @@ export default function ApplySensorModal({ isOpen, onClose, plantId }) {
                               <span className="bg-gray-100 text-gray-700 text-xs font-medium px-2 py-1 rounded">
                                 #{startIndex + index + 1}
                               </span>
-                              <h3 className="font-semibold text-gray-900 text-lg">{sensor.sensor_type}</h3>
+                              <h3 className="font-semibold text-gray-900 text-lg">{sensor.sensor_type || 'Unknown'}</h3>
                             </div>
                           </div>
                           <div className="grid grid-cols-2 gap-4 text-sm">
                             <div className="flex flex-col">
                               <span className="text-gray-500 font-medium">Sensor Type:</span>
-                              <span className="text-gray-900">{sensor.sensor_type}</span>
+                              <span className="text-gray-900">{sensor.sensor_type || '-'}</span>
                             </div>
                             <div className="flex flex-col">
                               <span className="text-gray-500 font-medium">Min Value:</span>
@@ -449,7 +447,9 @@ export default function ApplySensorModal({ isOpen, onClose, plantId }) {
                             </div>
                             <div className="flex flex-col">
                               <span className="text-gray-500 font-medium">Installation Date:</span>
-                              <span className="text-gray-900">{new Date(sensor.installation_date).toLocaleDateString()}</span>
+                              <span className="text-gray-900">
+                                {sensor.installation_date ? new Date(sensor.installation_date).toLocaleDateString() : '-'}
+                              </span>
                             </div>
                           </div>
                         </div>
