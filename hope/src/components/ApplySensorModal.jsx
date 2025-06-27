@@ -5,8 +5,11 @@ import axios from 'axios';
 export default function ApplySensorModal({ isOpen = false, onClose = () => {}, plantId = '' }) {
   const [sensor, setSensor] = useState({
     sensorType: '', // Stores sensor_name
+    sensorTypeRelationId: null, // Stores id from sensor relations
     minValue: '',
-    maxValue: ''
+    maxValue: '',
+    serialNumber: '',
+    notes: ''
   });
   const [sensorTypes, setSensorTypes] = useState([]);
   const [plantSensors, setPlantSensors] = useState([]);
@@ -65,6 +68,13 @@ export default function ApplySensorModal({ isOpen = false, onClose = () => {}, p
       if (value === '' || !isNaN(value)) {
         setSensor(prev => ({ ...prev, [field]: value }));
       }
+    } else if (field === 'sensorType') {
+      const selected = sensorTypes.find(type => type.sensor_name === value);
+      setSensor(prev => ({
+        ...prev,
+        sensorType: value,
+        sensorTypeRelationId: selected ? selected.id : null
+      }));
     } else {
       setSensor(prev => ({ ...prev, [field]: value }));
     }
@@ -91,9 +101,11 @@ export default function ApplySensorModal({ isOpen = false, onClose = () => {}, p
 
     if (
       sensor.sensorType === '' ||
+      !sensor.sensorTypeRelationId ||
+      sensor.serialNumber === '' ||
       (isMinMaxSensor && (sensor.minValue === '' || isNaN(sensor.minValue) || sensor.maxValue === '' || isNaN(sensor.maxValue)))
     ) {
-      setSensorsError('Please ensure all fields are filled: Select a sensor, and for min-max sensors, provide numeric Min and Max Values.');
+      setSensorsError('Please ensure all required fields are filled: Select a sensor, provide a serial number, and for min-max sensors, provide numeric Min and Max Values.');
       return;
     }
 
@@ -101,17 +113,20 @@ export default function ApplySensorModal({ isOpen = false, onClose = () => {}, p
       setSensorsError('');
       const payload = {
         plant_id: plantIdNum,
-        sensor_type: sensor.sensorType, // Use sensor_name as sensor_type
+        sensor_type_relation_id: sensor.sensorTypeRelationId,
+        installation_date: new Date().toISOString().split('T')[0],
+        serial_number: sensor.serialNumber,
         min_value: isMinMaxSensor ? parseInt(sensor.minValue, 10) : null,
         max_value: isMinMaxSensor ? parseInt(sensor.maxValue, 10) : null,
-        installation_date: new Date().toISOString().split('T')[0],
+        notes: sensor.notes || ''
       };
 
       console.log('Payload being sent:', payload);
 
       if (
         !payload.plant_id || isNaN(payload.plant_id) ||
-        !payload.sensor_type ||
+        !payload.sensor_type_relation_id ||
+        !payload.serial_number ||
         (isMinMaxSensor && (!payload.min_value || isNaN(payload.min_value) || !payload.max_value || isNaN(payload.max_value)))
       ) {
         console.error('Invalid payload detected:', payload);
@@ -128,7 +143,14 @@ export default function ApplySensorModal({ isOpen = false, onClose = () => {}, p
       setPlantSensors(filteredSensors.sort((a, b) => 
         new Date(b.installation_date) - new Date(a.installation_date)
       ));
-      setSensor({ sensorType: '', minValue: '', maxValue: '' }); // Reset form
+      setSensor({
+        sensorType: '',
+        sensorTypeRelationId: null,
+        minValue: '',
+        maxValue: '',
+        serialNumber: '',
+        notes: ''
+      }); // Reset form
       onClose();
     } catch (error) {
       console.error('Error submitting sensor:', error);
@@ -162,7 +184,9 @@ export default function ApplySensorModal({ isOpen = false, onClose = () => {}, p
   const filteredPlantSensors = plantSensors.filter(sensor =>
     sensor.sensor_type?.toLowerCase().includes(searchQuery.toLowerCase()) ||
     String(sensor.min_value || '').includes(searchQuery) ||
-    String(sensor.max_value || '').includes(searchQuery)
+    String(sensor.max_value || '').includes(searchQuery) ||
+    sensor.serial_number?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    sensor.notes?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredPlantSensors.length / sensorsPerPage);
@@ -218,7 +242,7 @@ export default function ApplySensorModal({ isOpen = false, onClose = () => {}, p
           )}
 
           <div className="space-y-6">
-            <div className="grid grid-cols-12 gap-6 items-center">
+            <div className="grid grid-cols-12 gap-6 items-start">
               <div className="col-span-3">
                 <label className="block text-sm font-medium text-gray-600 mb-2">
                   Select Sensor
@@ -252,6 +276,18 @@ export default function ApplySensorModal({ isOpen = false, onClose = () => {}, p
                   </p>
                 )}
               </div>
+              <div className="col-span-3">
+                <label className="block text-sm font-medium text-gray-600 mb-2">
+                  Serial Number
+                </label>
+                <input
+                  type="text"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  value={sensor.serialNumber}
+                  onChange={(e) => handleInputChange('serialNumber', e.target.value)}
+                  placeholder="Enter serial number"
+                />
+              </div>
               {isMinMaxSensor && (
                 <>
                   <div className="col-span-3">
@@ -280,7 +316,18 @@ export default function ApplySensorModal({ isOpen = false, onClose = () => {}, p
                   </div>
                 </>
               )}
-              <div className={isMinMaxSensor ? 'col-span-3' : 'col-span-9'} />
+              <div className="col-span-6">
+                <label className="block text-sm font-medium text-gray-600 mb-2">
+                  Notes (Optional)
+                </label>
+                <textarea
+                  className="w-full px-4 py-3 border border-gray-300 rounded-md bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  value={sensor.notes}
+                  onChange={(e) => handleInputChange('notes', e.target.value)}
+                  placeholder="Enter any notes"
+                  rows="3"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -298,6 +345,8 @@ export default function ApplySensorModal({ isOpen = false, onClose = () => {}, p
             className="px-8 py-2 bg-blue-500 hover:bg-blue-600 text-white font-medium rounded-lg transition-colors"
             disabled={
               sensor.sensorType === '' ||
+              !sensor.sensorTypeRelationId ||
+              sensor.serialNumber === '' ||
               (isMinMaxSensor && (!sensor.minValue || !sensor.maxValue || isNaN(sensor.minValue) || isNaN(sensor.maxValue)))
             }
           >
@@ -307,7 +356,9 @@ export default function ApplySensorModal({ isOpen = false, onClose = () => {}, p
 
         {/* Plant Sensors Table Section */}
         <div className="p-6">
-          <div className="max-w-full bg-white rounded-2xl shadow-sm border border-gray-200">
+          <div className="max-w-full bg
+
+-white rounded-2xl shadow-sm border border-gray-200">
             <div className="py-6 px-4 sm:px-6 lg:px-8">
               <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-6 gap-4">
                 <h2 className="text-2xl font-semibold text-gray-900">Applied Sensors for Plant {plantId || 'Unknown'}</h2>
@@ -377,16 +428,18 @@ export default function ApplySensorModal({ isOpen = false, onClose = () => {}, p
                       <thead>
                         <tr className="bg-gray-50">
                           <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700">S/No</th>
-                          <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700">Sensor Type</th>
+                          <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700">Sensor Name</th>
+                          <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700">Serial Number</th>
                           <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700">Min Value</th>
                           <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700">Max Value</th>
+                          <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700">Notes</th>
                           <th className="border border-gray-300 px-4 py-3 text-left text-sm font-medium text-gray-700">Installation Date</th>
                         </tr>
                       </thead>
                       <tbody className="bg-white">
                         {paginatedPlantSensors.length === 0 ? (
                           <tr>
-                            <td colSpan="5" className="border border-gray-300 px-4 py-8 text-center text-gray-500">
+                            <td colSpan="7" className="border border-gray-300 px-4 py-8 text-center text-gray-500">
                               {searchQuery ? 'No sensors found matching your search.' : 'No sensors applied to this plant yet.'}
                             </td>
                           </tr>
@@ -400,10 +453,16 @@ export default function ApplySensorModal({ isOpen = false, onClose = () => {}, p
                                 {sensor.sensor_type || '-'}
                               </td>
                               <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
+                                {sensor.serial_number || '-'}
+                              </td>
+                              <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
                                 {sensor.min_value ?? '-'}
                               </td>
                               <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
                                 {sensor.max_value ?? '-'}
+                              </td>
+                              <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
+                                {sensor.notes || '-'}
                               </td>
                               <td className="border border-gray-300 px-4 py-3 text-sm text-gray-900">
                                 {sensor.installation_date ? new Date(sensor.installation_date).toLocaleDateString() : '-'}
@@ -438,12 +497,20 @@ export default function ApplySensorModal({ isOpen = false, onClose = () => {}, p
                               <span className="text-gray-900">{sensor.sensor_type || '-'}</span>
                             </div>
                             <div className="flex flex-col">
+                              <span className="text-gray-500 font-medium">Serial Number:</span>
+                              <span className="text-gray-900">{sensor.serial_number || '-'}</span>
+                            </div>
+                            <div className="flex flex-col">
                               <span className="text-gray-500 font-medium">Min Value:</span>
                               <span className="text-gray-900">{sensor.min_value ?? '-'}</span>
                             </div>
                             <div className="flex flex-col">
                               <span className="text-gray-500 font-medium">Max Value:</span>
                               <span className="text-gray-900">{sensor.max_value ?? '-'}</span>
+                            </div>
+                            <div className="flex flex-col col-span-2">
+                              <span className="text-gray-500 font-medium">Notes:</span>
+                              <span className="text-gray-900">{sensor.notes || '-'}</span>
                             </div>
                             <div className="flex flex-col">
                               <span className="text-gray-500 font-medium">Installation Date:</span>
